@@ -45,7 +45,7 @@
 ### [0.2.0] - Prototype interactif
 - Ajout du **GameLoop Compose** (gestion `deltaTime` + `update()` / `draw()`).
 - Déplacement du dragon spectral via **contrôle tactile**.
-- Animation de segments lumineux (pré-visualisation du corps du dragon).
+- Animation de segments lumineux (prévisualisation du corps du dragon).
 - Écran **menu principal** (bouton “Commencer” + transitions).
 
 ### [0.3.0] - Système de sauvegarde & audio
@@ -60,12 +60,26 @@
 
 ---
 
+## 🪶 Historique des branches et versions
+
+| Branche | Statut | Description | Version associée |
+|:--|:--:|:--|:--:|
+| **main** | 🟢 Stable | Branche principale destinée aux versions finales et démonstrations. | v0.1.0 → ... |
+| **dev** | 🟣 Active | Développement continu, intégration de nouvelles fonctionnalités avant validation. | v0.1.x, v0.2.x |
+| **feature/ui-game** | 🔧 En préparation | Implémentation du GameLoop, contrôles tactiles et gestion des états du dragon. | v0.2.0 |
+| **feature/audio-system** | ⏳ À venir | Intégration des sons, musiques et effets réactifs à la lumière. | v0.3.0 |
+| **hotfix/** | ⚡ Occasionnel | Corrections urgentes sur `main` après release (stabilité ou compatibilité). | selon besoin |
+
+> 🔁 Flux Git recommandé :
+> `feature/*` → merge dans `dev` → validation & tests → merge dans `main` → **nouvelle release taguée**.
+
+---
+
 ## 🧑‍💻 Auteur
-**Valérie Lecœur** – Mastère Expert en Ingénierie Logicielle  
+**Valérie Lecœur** – ~~~~
 📍 France  
 🔗 [GitHub – Arckanna](https://github.com/Arckanna)
 
 ---
 
 > *“Même les âmes perdues laissent une trace.” – Yūrei*
-~~~~
