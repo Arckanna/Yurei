@@ -1,4 +1,4 @@
-package com.valerie.yurei.ui.game
+package com.valerie.yurei.ui.screens
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 
@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.drawscope.Stroke
 
 
 import androidx.compose.ui.layout.onSizeChanged
@@ -191,7 +192,7 @@ private fun FogBackground() {
                 color = YureiColors.MoonGlow.copy(alpha = 0.10f),
                 radius = haloR * 0.72f,
                 center = center,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = haloR * 0.008f),
+                style = Stroke(width = haloR * 0.008f),
                 blendMode = BlendMode.Screen
             )
         }
