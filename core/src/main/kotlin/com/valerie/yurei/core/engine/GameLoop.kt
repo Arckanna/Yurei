@@ -1,4 +1,4 @@
-package com.valerie.yurei.core
+package com.valerie.yurei.core.engine
 
 
 import kotlinx.coroutines.isActive
