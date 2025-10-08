@@ -1,9 +1,10 @@
-package com.valerie.yurei.ui
+package com.valerie.yurei.ui.viewmodel
 
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.valerie.yurei.core.GameLoop
+import com.valerie.yurei.core.engine.GameLoop
+import com.valerie.yurei.ui.navigation.RootNav
 import com.valerie.yurei.data.model.DragonState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
