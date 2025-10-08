@@ -17,8 +17,9 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
+
 }
 
 rootProject.name = "Yurei"
-include(":app")
+include(":app", ":core", ":ui", ":data", ":audio")
  
