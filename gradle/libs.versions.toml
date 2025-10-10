@@ -1,15 +1,18 @@
 [versions]
 # Outils
 agp = "8.13.0"
-kotlin = "2.0.21"            # tu peux garder 2.0.21
+kotlin = "2.0.21"
 
 # AndroidX / Compose
 compose-bom = "2024.10.01"
-compose-compiler = "1.5.14"  # pour android { composeOptions.kotlinCompilerExtensionVersion }
+compose-compiler = "1.6.11"      # <-- MAJ pour Kotlin 2.0.21
 activity = "1.9.3"
 lifecycle = "2.8.6"
 nav = "2.8.2"
-coreKtx = "1.13.1"           # stable et largement compatible
+coreKtx = "1.13.1"
+
+# Coroutines
+coroutines = "1.9.0"             # <-- AJOUT
 
 # Tests
 junit4 = "4.13.2"
@@ -22,19 +25,25 @@ serialization = "1.7.3"
 exoplayer = "2.19.1"
 
 [libraries]
-# Compose (piloter les versions via BOM)
-androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+# Compose (piloté par BOM)
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 
+# Navigation / Lifecycle
+navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "nav" }
+navigation-runtime-ktx = { module = "androidx.navigation:navigation-runtime-ktx", version.ref = "nav" }  # <-- nav (pas "navigation")
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+
 # AndroidX
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "nav" }
+
+# Coroutines
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }  # <-- AJOUT
 
 # Data / JSON
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
