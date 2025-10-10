@@ -27,5 +27,7 @@ class RootNavigator(private val nav: NavHostController) : RootNav {
     override fun toSettings() = nav.navigate(Route.Settings.path) {
         launchSingleTop = true
     }
-    override fun back() = nav.popBackStack()
+    override fun back() {
+        nav.popBackStack()
+    }
 }
