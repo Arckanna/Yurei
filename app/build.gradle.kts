@@ -56,7 +56,18 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.lifecycle.runtime)
-    implementation("androidx.navigation:navigation-compose:2.8.0")
-    // Alias correct pour le tooling de preview en debug
+
+    // Navigation Compose (via catalog)
+    implementation(libs.navigation.compose)
+    implementation(libs.navigation.runtime.ktx)
+
+    // ViewModel pour Compose
+    implementation(libs.lifecycle.viewmodel.compose)
+
+    // Coroutines Android (boucle de jeu / scopes)
+    implementation(libs.kotlinx.coroutines.android)
+
+    // Tooling debug
     debugImplementation(libs.compose.ui.tooling)
 }
+
