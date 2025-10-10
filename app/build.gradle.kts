@@ -56,7 +56,7 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.lifecycle.runtime)
-
+    implementation("androidx.navigation:navigation-compose:2.8.0")
     // Alias correct pour le tooling de preview en debug
     debugImplementation(libs.compose.ui.tooling)
 }
