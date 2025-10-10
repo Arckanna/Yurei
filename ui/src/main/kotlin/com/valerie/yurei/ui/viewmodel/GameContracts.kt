@@ -1,4 +1,4 @@
 package com.valerie.yurei.ui.viewmodel
 
-class GameIntente {
+class GameContracts {
 }
