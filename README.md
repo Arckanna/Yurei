@@ -89,7 +89,7 @@ yurei/
 
 > “La lumière ne naît pas du combat, mais du souvenir de ce qui fut.”
 
-Yūrei invite à une **introspection visuelle et sonore**, rappelant que la **fragilité** et la **lumière intérieure** sont les clés de la renaissance.
+Yūrei invite à une 'introspection visuelle et sonore' appelant que la **fragilité** et la **lumière intérieure** sont les clés de la renaissance.
 
 ---
 
