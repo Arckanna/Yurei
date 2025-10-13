@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.sp
 
 // --- Police personnalisée pour le titre du jeu ---
 val YureiTitleFont = FontFamily(
-    Font(R.font.yujiboku_regular, weight = FontWeight.SemiBold)
+    Font(R.font.shantellsansbolditalic, weight = FontWeight.Bold)
 )
 
 // --- Typographie par défaut Material 3 ---

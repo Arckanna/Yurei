@@ -58,14 +58,14 @@ fun HomeScreen(onStartGame: () -> Unit) {
                 Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                contentAlignment = Alignment.BottomStart
+                contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "YŪREI",
                     // Police “japonaise” si dispo, sinon Serif en fallback :
                     fontFamily = YureiTitleFont,
                     fontWeight = FontWeight.Black,
-                    fontSize = 56.sp,
+                    fontSize = 66.sp,
                     color = Color.Black,
                     lineHeight = 56.sp,
                     textAlign = TextAlign.Start,
@@ -83,7 +83,7 @@ fun HomeScreen(onStartGame: () -> Unit) {
                 Modifier
                     .fillMaxWidth()
                     .weight(1f),
-                contentAlignment = Alignment.TopStart
+                contentAlignment = Alignment.Center
             ) {
                 Button(
                     onClick = onStartGame,
