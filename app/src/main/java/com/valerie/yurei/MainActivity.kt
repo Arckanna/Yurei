@@ -3,7 +3,6 @@ package com.valerie.yurei
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -18,10 +17,21 @@ import com.valerie.yurei.ui.screens.GameScreen
 import com.valerie.yurei.ui.screens.HomeScreen
 import com.valerie.yurei.ui.screens.SettingsScreen
 import com.valerie.yurei.ui.viewmodel.GameViewModel
+import android.content.pm.ActivityInfo
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val isChromeOS =
+            packageManager.hasSystemFeature("android.hardware.type.pc") // Chromebook/Chrome OS
+
+        requestedOrientation = if (isChromeOS) {
+            ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
         setContent { YureiApp() }
     }
 }
