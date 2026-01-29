@@ -1,6 +1,6 @@
 [versions]
 # Outils
-agp = "8.13.0"
+agp = "8.13.2"
 kotlin = "2.0.21"
 
 # AndroidX / Compose

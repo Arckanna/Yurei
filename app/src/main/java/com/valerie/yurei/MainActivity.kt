@@ -63,7 +63,8 @@ fun YureiApp() {
             composable(Route.Game.path) {
                 GameScreen(
                     state = viewModel.state,
-                    onEvent = { viewModel.event(it) }
+                    onEvent = { viewModel.event(it) },
+                    onUpdateWorldSize = { size -> viewModel.updateWorldSize(size) }
                 )
             }
 
