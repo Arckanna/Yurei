@@ -41,7 +41,13 @@ class GameViewModel(
             gameRepository.preferences
                 .catch { }
                 .collect { prefs ->
-                    _state.update { it.copy(highScore = prefs.highScore) }
+                    _state.update {
+                        it.copy(
+                            highScore = prefs.highScore,
+                            musicEnabled = prefs.musicEnabled,
+                            sfxEnabled = prefs.sfxEnabled
+                        )
+                    }
                     audioManager.setMusicEnabled(prefs.musicEnabled)
                     audioManager.setSfxEnabled(prefs.sfxEnabled)
                 }
@@ -199,6 +205,16 @@ class GameViewModel(
         }
         audioManager.pauseMusic()
         _state.update { it.copy(phase = if (gameOver) GamePhase.GameOver else GamePhase.Idle) }
+    }
+
+    fun setMusicEnabled(enabled: Boolean) {
+        viewModelScope.launch { gameRepository.setMusicEnabled(enabled) }
+        audioManager.setMusicEnabled(enabled)
+    }
+
+    fun setSfxEnabled(enabled: Boolean) {
+        viewModelScope.launch { gameRepository.setSfxEnabled(enabled) }
+        audioManager.setSfxEnabled(enabled)
     }
 
     override fun onCleared() {

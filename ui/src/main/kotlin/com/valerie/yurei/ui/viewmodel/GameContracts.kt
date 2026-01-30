@@ -30,6 +30,8 @@ data class GameUiState(
     val phase: GamePhase = GamePhase.Idle,
     val score: Int = 0,
     val highScore: Int = 0,
+    val musicEnabled: Boolean = true,
+    val sfxEnabled: Boolean = true,
     val dragon: DragonVM = DragonVM(),
     val souls: List<SoulVM> = emptyList(),
     val fogParticles: List<FogParticleVM> = emptyList(),

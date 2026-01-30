@@ -68,7 +68,8 @@ fun YureiApp() {
                 val uiState by viewModel.state.collectAsState()
                 HomeScreen(
                     onStartGame = { viewModel.start() },
-                    highScore = uiState.highScore
+                    highScore = uiState.highScore,
+                    onOpenSettings = { rootNav.toSettings() }
                 )
             }
 
@@ -77,13 +78,22 @@ fun YureiApp() {
                 GameScreen(
                     state = viewModel.state,
                     onEvent = { viewModel.event(it) },
-                    onUpdateWorldSize = { size -> viewModel.updateWorldSize(size) }
+                    onUpdateWorldSize = { size -> viewModel.updateWorldSize(size) },
+                    onOpenSettings = { rootNav.toSettings() }
                 )
             }
 
-            // Écran des paramètres (facultatif)
+            // Écran des paramètres
             composable(Route.Settings.path) {
-                SettingsScreen(onBack = { rootNav.back() })
+                val uiState by viewModel.state.collectAsState()
+                SettingsScreen(
+                    onBack = { rootNav.back() },
+                    musicEnabled = uiState.musicEnabled,
+                    sfxEnabled = uiState.sfxEnabled,
+                    highScore = uiState.highScore,
+                    onMusicEnabledChange = { viewModel.setMusicEnabled(it) },
+                    onSfxEnabledChange = { viewModel.setSfxEnabled(it) }
+                )
             }
         }
     }

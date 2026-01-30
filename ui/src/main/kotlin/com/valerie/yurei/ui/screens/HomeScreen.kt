@@ -6,6 +6,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,7 +28,8 @@ import com.valerie.yurei.ui.theme.YureiTitleFont   // cf. Type.kt (section 3)
 @Composable
 fun HomeScreen(
     onStartGame: () -> Unit,
-    highScore: Int = 0
+    highScore: Int = 0,
+    onOpenSettings: (() -> Unit)? = null
 ) {
     Box(Modifier.fillMaxSize()) {
         // 1) Fond illustré
@@ -49,6 +52,22 @@ fun HomeScreen(
                     )
                 )
         )
+
+        // Bouton Paramètres (coin supérieur droit)
+        onOpenSettings?.let { openSettings ->
+            IconButton(
+                onClick = openSettings,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Paramètres",
+                    tint = Color.White
+                )
+            }
+        }
 
         // 3) Mise en page en tiers : Titre (tiers supérieur), vide (tiers milieu), bouton (tiers inférieur)
         Column(
