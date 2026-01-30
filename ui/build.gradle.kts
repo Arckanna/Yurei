@@ -29,6 +29,9 @@ android {
 dependencies {
     api(project(":core"))
     api(project(":data"))
+    implementation(project(":audio"))
+
+    implementation(libs.lifecycle.viewmodel.compose)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

@@ -29,6 +29,7 @@ data class FogParticleVM(
 data class GameUiState(
     val phase: GamePhase = GamePhase.Idle,
     val score: Int = 0,
+    val highScore: Int = 0,
     val dragon: DragonVM = DragonVM(),
     val souls: List<SoulVM> = emptyList(),
     val fogParticles: List<FogParticleVM> = emptyList(),

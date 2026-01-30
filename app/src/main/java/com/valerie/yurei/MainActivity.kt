@@ -1,5 +1,6 @@
 package com.valerie.yurei
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,6 +9,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -17,6 +22,7 @@ import com.valerie.yurei.ui.screens.GameScreen
 import com.valerie.yurei.ui.screens.HomeScreen
 import com.valerie.yurei.ui.screens.SettingsScreen
 import com.valerie.yurei.ui.viewmodel.GameViewModel
+import com.valerie.yurei.ui.viewmodel.GameViewModelFactory
 import android.content.pm.ActivityInfo
 
 
@@ -45,9 +51,12 @@ fun YureiApp() {
     // Contrôleur de navigation
     val navController = rememberNavController()
     val rootNav = RootNavigator(navController)
+    val application = LocalContext.current.applicationContext as Application
 
-    // Instanciation du ViewModel avec le RootNav
-    val viewModel = GameViewModel(rootNav)
+    // ViewModel avec factory (audio + sauvegarde)
+    val viewModel: GameViewModel = viewModel(
+        factory = GameViewModelFactory(application, rootNav)
+    )
 
     MaterialTheme(colorScheme = colors) {
         NavHost(
@@ -56,7 +65,11 @@ fun YureiApp() {
         ) {
             // Écran d'accueil
             composable(Route.Home.path) {
-                HomeScreen(onStartGame = { viewModel.start() })
+                val uiState by viewModel.state.collectAsState()
+                HomeScreen(
+                    onStartGame = { viewModel.start() },
+                    highScore = uiState.highScore
+                )
             }
 
             // Écran de jeu

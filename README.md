@@ -68,8 +68,15 @@ yurei/
 ├── core/ # Logique du jeu, moteur, collisions, brume
 ├── ui/ # Écrans, menus, transitions (Jetpack Compose)
 ├── data/ # Sauvegardes, progression, paramètres
-├── audio/ # Gestion des musiques et effets
-└── assets/ # Ressources visuelles et sonores (PNG, OGG, MP3)
+├── audio/ # Gestion des musiques et effets (SoundPool + ExoPlayer)
+└── app/src/main/res/raw/ # Fichiers sons (OGG/MP3) : soul_collect, pause, resume, game_over, button_tap, ambient
+
+---
+
+## 🔊 Fichiers audio (optionnel)
+
+Pour activer les sons, ajoutez dans `app/src/main/res/raw/` les fichiers (sans extension dans le code) :  
+`soul_collect`, `pause`, `resume`, `game_over`, `button_tap`, `ambient` (musique en boucle).
 
 ---
 

@@ -24,7 +24,10 @@ import com.valerie.yurei.ui.theme.YureiTitleFont   // cf. Type.kt (section 3)
 
 
 @Composable
-fun HomeScreen(onStartGame: () -> Unit) {
+fun HomeScreen(
+    onStartGame: () -> Unit,
+    highScore: Int = 0
+) {
     Box(Modifier.fillMaxSize()) {
         // 1) Fond illustré
         Image(
@@ -76,7 +79,21 @@ fun HomeScreen(onStartGame: () -> Unit) {
             }
 
             // Tiers 2 — espace “respiration”
-            Spacer(Modifier.weight(1f))
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                if (highScore > 0) {
+                    Text(
+                        text = "Meilleur score : $highScore",
+                        fontSize = 16.sp,
+                        color = Color.White,
+                        modifier = Modifier.shadow(2.dp, spotColor = Color(0x44000000))
+                    )
+                }
+            }
 
             // Tiers 3 — Bouton "Commencer"
             Box(
