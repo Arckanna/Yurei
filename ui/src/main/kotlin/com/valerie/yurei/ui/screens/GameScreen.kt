@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.onSizeChanged
 import com.valerie.yurei.ui.components.PauseOverlay
 import com.valerie.yurei.ui.viewmodel.GameIntent
 import com.valerie.yurei.ui.viewmodel.GamePhase
@@ -33,9 +34,9 @@ fun GameScreen(
 ) {
     val ui by state.collectAsState()
 
-    // Touche "retour" → ouvrir Pause quand on joue
-    BackHandler(enabled = ui.phase == GamePhase.Running) {
-        onEvent(GameIntent.Pause)
+    // Retour ouvre la pause ou reprend la partie sans quitter la route du jeu.
+    BackHandler(enabled = ui.phase == GamePhase.Running || ui.phase == GamePhase.Paused) {
+        onEvent(if (ui.phase == GamePhase.Running) GameIntent.Pause else GameIntent.Resume)
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -74,10 +75,10 @@ fun GameScreen(
                 )
         ) {
             Canvas(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().onSizeChanged {
+                    onUpdateWorldSize?.invoke(Size(it.width.toFloat(), it.height.toFloat()))
+                }
             ) {
-                // Notifier la taille du monde au ViewModel
-                onUpdateWorldSize?.invoke(size)
 
                 // 1. Dessiner la brume en arrière-plan
                 ui.fogParticles.forEach { fog ->

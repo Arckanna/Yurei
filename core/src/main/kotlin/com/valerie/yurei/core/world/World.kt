@@ -41,10 +41,8 @@ data class FogParticle(
         var newY = position.y + dy
 
         // Réapparition de l'autre côté si hors limites
-        if (newX < 0) newX += worldSize.width
-        if (newX > worldSize.width) newX -= worldSize.width
-        if (newY < 0) newY += worldSize.height
-        if (newY > worldSize.height) newY -= worldSize.height
+        newX = ((newX % worldSize.width) + worldSize.width) % worldSize.width
+        newY = ((newY % worldSize.height) + worldSize.height) % worldSize.height
 
         return copy(position = Offset(newX, newY))
     }
@@ -69,6 +67,7 @@ class World(
     private val soulSpawnRadius = 50f // Distance minimale du centre pour spawner
 
     init {
+        require(size.isPlayable())
         generateSouls(initialSoulCount)
         generateFog(30) // 30 particules de brume
     }
@@ -77,6 +76,7 @@ class World(
      * Met à jour le monde (animations, régénération d'âmes).
      */
     fun update(dtMs: Long) {
+        if (dtMs <= 0) return
         timeMs += dtMs
 
         // Régénérer les âmes si nécessaire
@@ -106,13 +106,12 @@ class World(
             val y = centerY + kotlin.math.sin(angle) * distance
 
             // S'assurer que l'âme est dans les limites
-            val clampedX = x.coerceIn(30f, size.width - 30f)
-            val clampedY = y.coerceIn(30f, size.height - 30f)
+            val position = Offset(x, y).confinedTo(size, 30f)
 
             souls.add(
                 Soul(
                     id = nextSoulId++,
-                    position = Offset(clampedX, clampedY),
+                    position = position,
                     radius = Random.nextFloat() * 10f + 15f, // Entre 15 et 25
                     lightIntensity = Random.nextFloat() * 0.3f + 0.7f, // Entre 0.7 et 1.0
                     pulsePhase = Random.nextFloat() * kotlin.math.PI.toFloat() * 2f
@@ -187,6 +186,9 @@ class World(
      * Met à jour la taille du monde (utile lors des changements d'orientation).
      */
     fun updateSize(newSize: Size) {
+        if (!newSize.isPlayable() || newSize == size) return
+        souls.replaceAll { it.copy(position = it.position.rescaled(size, newSize).confinedTo(newSize, 30f)) }
+        fogParticles.replaceAll { it.copy(position = it.position.rescaled(size, newSize).confinedTo(newSize)) }
         size = newSize
     }
 

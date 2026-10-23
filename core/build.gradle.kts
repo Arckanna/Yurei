@@ -24,6 +24,8 @@ android {
 }
 
 dependencies {
+    testImplementation(libs.junit4)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${libs.versions.coroutines.get()}")
     // Compose pour les types géométriques (Offset, Size)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

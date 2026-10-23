@@ -10,6 +10,7 @@ import com.valerie.yurei.audio.Sfx
 import com.valerie.yurei.core.engine.GameLoop
 import com.valerie.yurei.core.entity.Dragon
 import com.valerie.yurei.core.world.World
+import com.valerie.yurei.core.world.isPlayable
 import com.valerie.yurei.data.repository.GameRepository
 import com.valerie.yurei.ui.navigation.RootNav
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +21,7 @@ import kotlinx.coroutines.launch
 
 class GameViewModel(
     application: Application,
-    private val nav: RootNav
+    private var nav: RootNav
 ) : AndroidViewModel(application) {
 
     private val audioManager = AudioManager(application)
@@ -28,13 +29,13 @@ class GameViewModel(
 
     private var dragon: Dragon? = null
     private var world: World? = null
-    private var worldSize: Size = Size(1080f, 1920f)
+    private var worldSize: Size = Size.Zero
 
     private val _state = MutableStateFlow(GameUiState())
     val state: StateFlow<GameUiState> = _state
 
     private var frameCount = 0
-    private var lastFpsUpdate = System.currentTimeMillis()
+    private var lastFpsUpdate = System.nanoTime() / 1_000_000L
 
     init {
         viewModelScope.launch {
@@ -55,9 +56,11 @@ class GameViewModel(
     }
 
     private val loop = GameLoop(viewModelScope) { dt ->
+        if (_state.value.phase != GamePhase.Running) return@GameLoop
         val d = dragon ?: return@GameLoop
         val w = world ?: return@GameLoop
 
+        d.update(dt)
         w.update(dt)
 
         val currentLight = d.light
@@ -74,6 +77,28 @@ class GameViewModel(
             audioManager.playSfx(Sfx.SoulCollect)
         }
 
+        frameCount++
+        val now = System.nanoTime() / 1_000_000L
+        val fps = if (now - lastFpsUpdate >= 1000) {
+            val calculatedFps = (frameCount * 1000f / (now - lastFpsUpdate)).toInt()
+            frameCount = 0
+            lastFpsUpdate = now
+            calculatedFps
+        } else {
+            _state.value.fps
+        }
+
+        publishWorld(fps)
+
+        if (d.light <= 0f && _state.value.phase == GamePhase.Running) {
+            stopInternal(gameOver = true)
+            nav.toHome()
+        }
+    }
+
+    private fun publishWorld(fps: Int = _state.value.fps) {
+        val d = dragon ?: return
+        val w = world ?: return
         val segments = d.getSegments().map { segment ->
             DragonSegmentVM(segment.position, segment.light)
         }
@@ -92,44 +117,42 @@ class GameViewModel(
             )
         }
 
-        frameCount++
-        val now = System.currentTimeMillis()
-        val fps = if (now - lastFpsUpdate >= 1000) {
-            val calculatedFps = (frameCount * 1000f / (now - lastFpsUpdate)).toInt()
-            frameCount = 0
-            lastFpsUpdate = now
-            calculatedFps
-        } else {
-            _state.value.fps
-        }
-
-        _state.update { u ->
-            u.copy(
-                phase = if (u.phase == GamePhase.Paused || u.phase == GamePhase.GameOver)
-                    u.phase else GamePhase.Running,
-                dragon = DragonVM(segments, d.getHeadRadius()),
-                souls = souls,
-                fogParticles = fogParticles,
-                fps = fps
-            )
-        }
-
-        if (d.light <= 0f && _state.value.phase == GamePhase.Running) {
-            stopInternal(gameOver = true)
-            nav.toHome()
-        }
+        _state.update { it.copy(
+            dragon = DragonVM(segments, d.getHeadRadius()),
+            souls = souls,
+            fogParticles = fogParticles,
+            fps = fps
+        ) }
     }
 
+    // A retained ViewModel must use the current Activity's navigation controller.
+    fun updateNavigator(navigator: RootNav) { nav = navigator }
+
     fun updateWorldSize(size: Size) {
+        if (!size.isPlayable()) return
+        val previousSize = worldSize
         worldSize = size
-        world?.updateSize(size)
+        if (world == null) {
+            if (_state.value.phase == GamePhase.Running || _state.value.phase == GamePhase.Paused) {
+                resetWorld()
+                if (_state.value.phase == GamePhase.Running) loop.start()
+            }
+        } else if (size != previousSize) {
+            dragon?.resize(previousSize, size)
+            world?.updateSize(size)
+            publishWorld()
+        }
     }
 
     fun event(intent: GameIntent) {
         when (intent) {
             is GameIntent.Start -> {
                 if (_state.value.phase == GamePhase.Idle || _state.value.phase == GamePhase.GameOver) {
-                    resetWorld()
+                    loop.stop()
+                    dragon = null
+                    world = null
+                    _state.update { it.copy(score = 0, dragon = DragonVM(), souls = emptyList(), fogParticles = emptyList()) }
+                    if (worldSize.isPlayable()) resetWorld()
                     nav.toGame()
                     startInternal()
                 }
@@ -145,14 +168,8 @@ class GameViewModel(
                 nav.toHome()
             }
             is GameIntent.Drag -> {
-                val d = dragon ?: return
-                val currentPos = d.headPosition
-                d.updateHeadPosition(
-                    Offset(
-                        currentPos.x + intent.dx,
-                        currentPos.y + intent.dy
-                    )
-                )
+                if (_state.value.phase != GamePhase.Running || !worldSize.isPlayable()) return
+                dragon?.moveBy(intent.dx, intent.dy, worldSize)
             }
         }
     }
@@ -169,13 +186,14 @@ class GameViewModel(
         dragon = Dragon(Offset(centerX, centerY), initialLength = 1, initialLight = 0.5f)
         world = World(worldSize, initialSoulCount = 5)
         frameCount = 0
-        lastFpsUpdate = System.currentTimeMillis()
-        _state.update { it.copy(phase = GamePhase.Idle, score = 0) }
+        lastFpsUpdate = System.nanoTime() / 1_000_000L
+        _state.update { it.copy(score = 0) }
+        publishWorld(0)
     }
 
     private fun startInternal() {
         _state.update { it.copy(phase = GamePhase.Running) }
-        loop.start()
+        if (world != null) loop.start()
         audioManager.prepareMusic("ambient")
         audioManager.startMusic()
     }
@@ -189,7 +207,9 @@ class GameViewModel(
 
     private fun resumeInternal() {
         _state.update { it.copy(phase = GamePhase.Running) }
-        loop.start()
+        frameCount = 0
+        lastFpsUpdate = System.nanoTime() / 1_000_000L
+        if (world != null) loop.start()
         audioManager.playSfx(Sfx.Resume)
         audioManager.startMusic()
     }

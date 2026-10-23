@@ -5,6 +5,23 @@
 
 ---
 
+## [Non publié] - 2026-10-23
+
+### Stabilisation du moteur
+
+- Annulation du Job de la boucle à chaque arrêt pour empêcher les boucles concurrentes après un redémarrage.
+- Horloge monotone et pas temporel plafonné à 50 ms pour éviter les sauts de simulation après une longue interruption.
+- Initialisation du premier monde après mesure de la surface ; redimensionnement des âmes, de la brume et du dragon sans perdre la progression en mémoire.
+- Déplacements bornés à la surface, y compris sur les petites fenêtres ; rejet des entrées tactiles non finies et des déplacements en pause.
+- Suivi du corps à chaque mise à jour temporelle, indépendant du nombre d'événements tactiles ; longueur initiale correctement matérialisée.
+- Pause automatique au passage en arrière-plan ; reprise explicite après recréation de l'activité et actualisation du contrôleur de navigation conservé par le ViewModel.
+- Le bouton Retour reprend depuis la pause au lieu de laisser une partie inaccessible derrière l'accueil.
+- Configuration des tests JUnit et Android ; ajout de 12 tests unitaires du moteur et de 2 tests d'intégration Android.
+
+Validation : tests unitaires, compilation debug et APK de tests, lint (avec avertissements), puis 3 tests instrumentés réussis sur émulateur Android 16/API 36 (dont le test de contexte préexistant).
+
+La conservation de partie reste en mémoire : la sauvegarde après destruction du processus et le rééquilibrage de la lumière constituent des travaux distincts. Aucune mesure de performances sur appareil physique n'est incluse dans cette validation.
+
 ## [0.1.0] - 2025-10-05
 ### ✨ Première version du projet (prototype visuel)
 - Création du **dépôt GitHub** : [`Arckanna/Yurei`](https://github.com/Arckanna/Yurei).

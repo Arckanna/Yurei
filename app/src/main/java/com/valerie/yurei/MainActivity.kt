@@ -9,6 +9,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
@@ -50,13 +56,26 @@ fun YureiApp() {
 
     // Contrôleur de navigation
     val navController = rememberNavController()
-    val rootNav = RootNavigator(navController)
+    val rootNav = remember(navController) { RootNavigator(navController) }
     val application = LocalContext.current.applicationContext as Application
 
     // ViewModel avec factory (audio + sauvegarde)
     val viewModel: GameViewModel = viewModel(
         factory = GameViewModelFactory(application, rootNav)
     )
+
+    SideEffect { viewModel.updateNavigator(rootNav) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) viewModel.pause()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.pause()
+        }
+    }
 
     MaterialTheme(colorScheme = colors) {
         NavHost(

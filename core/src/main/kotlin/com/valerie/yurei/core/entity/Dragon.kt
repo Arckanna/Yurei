@@ -2,6 +2,10 @@ package com.valerie.yurei.core.entity
 
 import androidx.compose.ui.geometry.Offset
 import kotlin.math.sqrt
+import kotlin.math.pow
+import androidx.compose.ui.geometry.Size
+import com.valerie.yurei.core.world.confinedTo
+import com.valerie.yurei.core.world.rescaled
 
 /**
  * Représente un segment du corps du dragon spectral.
@@ -26,11 +30,11 @@ class Dragon(
         private set
 
     // Intensité lumineuse globale (affecte tous les segments)
-    var light: Float = initialLight
+    var light: Float = initialLight.coerceIn(0f, 1f)
         private set
 
     // Longueur du corps (nombre de segments)
-    var length: Int = initialLength
+    var length: Int = initialLength.coerceAtLeast(1)
         private set
 
     // Liste des segments du corps (tête = index 0)
@@ -43,16 +47,17 @@ class Dragon(
     private val followSpeed: Float = 0.15f
 
     init {
-        // Initialiser avec un seul segment (la tête)
-        segments.add(DragonSegment(initialPosition, initialLight))
+        // Créer immédiatement tous les segments demandés, tête comprise.
+        repeat(length) { segments.add(DragonSegment(initialPosition, light)) }
     }
 
     /**
-     * Met à jour la position de la tête et fait suivre les segments.
+     * Déplace la tête ; le corps suit lors des mises à jour temporelles.
      */
     fun updateHeadPosition(newPosition: Offset) {
+        if (!newPosition.x.isFinite() || !newPosition.y.isFinite()) return
         headPosition = newPosition
-        updateSegments()
+        segments[0] = DragonSegment(headPosition, light)
     }
 
     /**
@@ -90,7 +95,9 @@ class Dragon(
     /**
      * Met à jour les positions des segments pour qu'ils suivent la tête.
      */
-    private fun updateSegments() {
+    fun update(dtMs: Long) {
+        if (dtMs <= 0) return
+        val followFactor = 1f - (1f - followSpeed).pow(dtMs / 16f)
         if (segments.isEmpty()) {
             segments.add(DragonSegment(headPosition, light))
             return
@@ -110,7 +117,7 @@ class Dragon(
 
             if (distance > segmentSpacing) {
                 // Calculer la nouvelle position avec interpolation
-                val moveDistance = (distance - segmentSpacing) * followSpeed
+                val moveDistance = (distance - segmentSpacing) * followFactor
                 val angle = kotlin.math.atan2(dy, dx)
                 val newX = current.x + kotlin.math.cos(angle) * moveDistance
                 val newY = current.y + kotlin.math.sin(angle) * moveDistance
@@ -138,6 +145,16 @@ class Dragon(
      * Retourne la liste des segments pour le rendu.
      */
     fun getSegments(): List<DragonSegment> = segments.toList()
+
+    fun moveBy(dx: Float, dy: Float, size: Size) {
+        if (!dx.isFinite() || !dy.isFinite()) return
+        updateHeadPosition((headPosition + Offset(dx, dy)).confinedTo(size, 48f))
+    }
+
+    fun resize(from: Size, to: Size) {
+        segments.replaceAll { it.copy(position = it.position.rescaled(from, to).confinedTo(to, 48f)) }
+        headPosition = segments.first().position
+    }
 
     /**
      * Retourne le rayon de collision de la tête.
