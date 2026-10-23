@@ -1,6 +1,12 @@
 package com.valerie.yurei.data.repository
 
 import android.content.Context
+import com.valerie.yurei.data.model.SavedGame
+import com.valerie.yurei.data.model.SavedGameCodec
+import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.first
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -13,9 +19,41 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "game_prefs")
 
-class GameRepository(private val context: Context) {
+class GameRepository(context: Context) {
+    private val context = context.applicationContext
+
+    companion object {
+        // Process-owned FIFO: writes survive ViewModel disposal and cannot overtake
+        // a new-game deletion. DataStore commits each snapshot atomically.
+        private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
+        private val writer = CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            for (write in writes) write()
+        }
+    }
+
+    suspend fun loadGame(): SavedGame? {
+        val barrier = CompletableDeferred<Unit>()
+        writes.send { barrier.complete(Unit) }
+        barrier.await()
+        return context.dataStore.data.first()[Keys.GAME]?.let(SavedGameCodec::decode)
+    }
+
+    fun saveGame(game: SavedGame?, onComplete: (Throwable?) -> Unit = {}) {
+        writes.trySend {
+            val result = runCatching {
+                val encoded = game?.let(SavedGameCodec::encode)
+                context.dataStore.edit { prefs ->
+                    if (encoded == null) prefs.remove(Keys.GAME) else prefs[Keys.GAME] = encoded
+                    if (game != null && game.score > (prefs[Keys.HIGH_SCORE] ?: 0)) prefs[Keys.HIGH_SCORE] = game.score
+                }
+            }
+            onComplete(result.exceptionOrNull())
+        }.getOrThrow()
+    }
+
 
     private object Keys {
+        val GAME = stringPreferencesKey("saved_game_v1")
         val HIGH_SCORE = intPreferencesKey("high_score")
         val MUSIC_ENABLED = booleanPreferencesKey("music_enabled")
         val SFX_ENABLED = booleanPreferencesKey("sfx_enabled")

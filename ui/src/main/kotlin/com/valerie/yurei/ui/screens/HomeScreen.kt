@@ -29,6 +29,9 @@ import com.valerie.yurei.ui.theme.YureiTitleFont   // cf. Type.kt (section 3)
 fun HomeScreen(
     onStartGame: () -> Unit,
     highScore: Int = 0,
+    ready: Boolean = true,
+    hasSavedGame: Boolean = false,
+    onContinue: () -> Unit = {},
     onOpenSettings: (() -> Unit)? = null
 ) {
     Box(Modifier.fillMaxSize()) {
@@ -121,7 +124,13 @@ fun HomeScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (hasSavedGame) {
+                    Button(onClick = onContinue, enabled = ready) { Text("Continuer la partie") }
+                    Spacer(Modifier.height(8.dp))
+                }
                 Button(
+                    enabled = ready,
                     onClick = onStartGame,
                     shape = RoundedCornerShape(16.dp),
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
@@ -132,7 +141,8 @@ fun HomeScreen(
                     modifier = Modifier
                         .shadow(6.dp, RoundedCornerShape(16.dp))
                 ) {
-                    Text("Commencer la partie", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text(if (!ready) "Chargement…" else "Commencer la partie", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                }
                 }
             }
         }

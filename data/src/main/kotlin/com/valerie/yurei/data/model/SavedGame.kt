@@ -1,0 +1,42 @@
+package com.valerie.yurei.data.model
+
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+@Serializable data class SavedPoint(val x: Float, val y: Float)
+@Serializable data class SavedSoul(val id: Int, val position: SavedPoint, val radius: Float, val light: Float, val pulse: Float)
+@Serializable data class SavedFog(val position: SavedPoint, val size: Float, val opacity: Float, val speed: Float, val direction: Float)
+@Serializable data class SavedGame(
+    val version: Int = 1,
+    val width: Float,
+    val height: Float,
+    val segments: List<SavedPoint>,
+    val light: Float,
+    val score: Int,
+    val souls: List<SavedSoul>,
+    val fog: List<SavedFog>,
+    val worldTimeMs: Long,
+    val idleMs: Long,
+    val erosionMs: Long
+) {
+    fun isValid(): Boolean {
+        fun point(p: SavedPoint) = p.x.isFinite() && p.y.isFinite() && p.x in 0f..width && p.y in 0f..height
+        return version == 1 && width.isFinite() && height.isFinite() && width > 0 && height > 0 &&
+            segments.isNotEmpty() && segments.all(::point) && light.isFinite() && light > 0f && light <= 1f &&
+            score >= 0 && worldTimeMs >= 0 && idleMs in 0..8_000L && erosionMs in 0..7_999L &&
+            souls.size <= 8 && souls.map { it.id }.distinct().size == souls.size &&
+            souls.all { it.id in 0 until Int.MAX_VALUE && point(it.position) && it.radius.isFinite() && it.radius in 1f..30f && it.light.isFinite() && it.light in 0f..1f && it.pulse.isFinite() } &&
+            fog.size <= 30 && fog.all { point(it.position) && it.size.isFinite() && it.size in 1f..200f && it.opacity.isFinite() && it.opacity in 0f..1f && it.speed.isFinite() && it.speed in 0f..1f && it.direction.isFinite() }
+    }
+}
+
+object SavedGameCodec {
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    fun encode(game: SavedGame): String {
+        require(game.isValid()) { "Invalid save" }
+        return json.encodeToString(SavedGame.serializer(), game)
+    }
+    fun decode(value: String): SavedGame = json.decodeFromString(SavedGame.serializer(), value).also {
+        require(it.isValid()) { "Invalid or unsupported save" }
+    }
+}

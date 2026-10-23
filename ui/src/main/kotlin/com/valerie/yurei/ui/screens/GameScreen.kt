@@ -185,6 +185,12 @@ fun GameScreen(
                 }
             }
 
+            if (ui.ready && (ui.phase == GamePhase.Idle || ui.phase == GamePhase.GameOver)) {
+                Button(onClick = { onEvent(GameIntent.Start) }, modifier = Modifier.align(Alignment.Center)) {
+                    Text("Commencer la partie")
+                }
+            }
+
             // Overlay Pause
             if (ui.phase == GamePhase.Paused) {
                 PauseOverlay(

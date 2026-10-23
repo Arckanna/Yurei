@@ -27,6 +27,9 @@ data class FogParticleVM(
 )
 
 data class GameUiState(
+    val ready: Boolean = false,
+    val hasSavedGame: Boolean = false,
+    val persistenceError: String? = null,
     val phase: GamePhase = GamePhase.Idle,
     val score: Int = 0,
     val highScore: Int = 0,
@@ -39,6 +42,7 @@ data class GameUiState(
 )
 
 sealed class GameIntent {
+    data object Continue : GameIntent()
     data object Start : GameIntent()
     data object Pause : GameIntent()
     data object Resume : GameIntent()

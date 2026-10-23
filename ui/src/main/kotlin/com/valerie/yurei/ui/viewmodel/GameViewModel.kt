@@ -8,6 +8,11 @@ import androidx.lifecycle.viewModelScope
 import com.valerie.yurei.audio.AudioManager
 import com.valerie.yurei.audio.Sfx
 import com.valerie.yurei.core.engine.GameLoop
+import com.valerie.yurei.core.engine.LightBalance
+import com.valerie.yurei.core.world.Soul
+import com.valerie.yurei.core.world.FogParticle
+import com.valerie.yurei.data.model.*
+import kotlinx.coroutines.CancellationException
 import com.valerie.yurei.core.entity.Dragon
 import com.valerie.yurei.core.world.World
 import com.valerie.yurei.core.world.isPlayable
@@ -30,30 +35,18 @@ class GameViewModel(
     private var dragon: Dragon? = null
     private var world: World? = null
     private var worldSize: Size = Size.Zero
+    private var viewportSize: Size = Size.Zero
 
     private val _state = MutableStateFlow(GameUiState())
     val state: StateFlow<GameUiState> = _state
 
+    private var balance = LightBalance()
+    private var checkpointMs = 0L
+    private var savedGame: SavedGame? = null
+    private var saveRevision = 0L
+
     private var frameCount = 0
     private var lastFpsUpdate = System.nanoTime() / 1_000_000L
-
-    init {
-        viewModelScope.launch {
-            gameRepository.preferences
-                .catch { }
-                .collect { prefs ->
-                    _state.update {
-                        it.copy(
-                            highScore = prefs.highScore,
-                            musicEnabled = prefs.musicEnabled,
-                            sfxEnabled = prefs.sfxEnabled
-                        )
-                    }
-                    audioManager.setMusicEnabled(prefs.musicEnabled)
-                    audioManager.setSfxEnabled(prefs.sfxEnabled)
-                }
-        }
-    }
 
     private val loop = GameLoop(viewModelScope) { dt ->
         if (_state.value.phase != GamePhase.Running) return@GameLoop
@@ -63,15 +56,12 @@ class GameViewModel(
         d.update(dt)
         w.update(dt)
 
-        val currentLight = d.light
-        val lightDecay = 0.0001f * dt
-        d.setLight((currentLight - lightDecay).coerceAtLeast(0f))
+        balance.update(d, dt)
 
         val collectedSoulIds = w.checkSoulCollisions(d.headPosition, d.getHeadRadius())
         if (collectedSoulIds.isNotEmpty()) {
             collectedSoulIds.forEach { _ ->
-                d.addSegment()
-                d.setLight((d.light + 0.2f).coerceIn(0f, 1f))
+                balance.collect(d)
             }
             _state.update { it.copy(score = it.score + collectedSoulIds.size * 10) }
             audioManager.playSfx(Sfx.SoulCollect)
@@ -90,9 +80,39 @@ class GameViewModel(
 
         publishWorld(fps)
 
+        checkpointMs += dt
+        if (d.light > 0f && (checkpointMs >= 2_000L || collectedSoulIds.isNotEmpty())) checkpoint()
         if (d.light <= 0f && _state.value.phase == GamePhase.Running) {
             stopInternal(gameOver = true)
             nav.toHome()
+        }
+    }
+
+    init {
+        viewModelScope.launch {
+            try {
+                savedGame = gameRepository.loadGame()
+                savedGame?.let { restoreGame(it) }
+                _state.update { it.copy(ready = true, hasSavedGame = savedGame != null) }
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                _state.update { it.copy(ready = true, persistenceError = "La sauvegarde n’a pas pu être chargée. Vous pouvez commencer une nouvelle partie.") }
+            }
+        }
+        viewModelScope.launch {
+            gameRepository.preferences
+                .catch { }
+                .collect { prefs ->
+                    _state.update {
+                        it.copy(
+                            highScore = prefs.highScore,
+                            musicEnabled = prefs.musicEnabled,
+                            sfxEnabled = prefs.sfxEnabled
+                        )
+                    }
+                    audioManager.setMusicEnabled(prefs.musicEnabled)
+                    audioManager.setSfxEnabled(prefs.sfxEnabled)
+                }
         }
     }
 
@@ -130,6 +150,7 @@ class GameViewModel(
 
     fun updateWorldSize(size: Size) {
         if (!size.isPlayable()) return
+        viewportSize = size
         val previousSize = worldSize
         worldSize = size
         if (world == null) {
@@ -145,9 +166,16 @@ class GameViewModel(
     }
 
     fun event(intent: GameIntent) {
+        if (!_state.value.ready) return
         when (intent) {
+            is GameIntent.Continue -> {
+                val saved = savedGame ?: return
+                restoreGame(saved)
+                nav.toGame()
+            }
             is GameIntent.Start -> {
-                if (_state.value.phase == GamePhase.Idle || _state.value.phase == GamePhase.GameOver) {
+                if (_state.value.phase != GamePhase.Running) {
+                    save(null)
                     loop.stop()
                     dragon = null
                     world = null
@@ -169,7 +197,10 @@ class GameViewModel(
             }
             is GameIntent.Drag -> {
                 if (_state.value.phase != GamePhase.Running || !worldSize.isPlayable()) return
-                dragon?.moveBy(intent.dx, intent.dy, worldSize)
+                val d = dragon ?: return
+                val before = d.headPosition
+                d.moveBy(intent.dx, intent.dy, worldSize)
+                balance.moved((d.headPosition - before).getDistance())
             }
         }
     }
@@ -183,12 +214,15 @@ class GameViewModel(
     private fun resetWorld() {
         val centerX = worldSize.width / 2f
         val centerY = worldSize.height / 2f
-        dragon = Dragon(Offset(centerX, centerY), initialLength = 1, initialLight = 0.5f)
+        dragon = Dragon(Offset(centerX, centerY), initialLength = 1, initialLight = LightBalance.INITIAL_LIGHT)
+        balance = LightBalance()
+        checkpointMs = 0L
         world = World(worldSize, initialSoulCount = 5)
         frameCount = 0
         lastFpsUpdate = System.nanoTime() / 1_000_000L
         _state.update { it.copy(score = 0) }
         publishWorld(0)
+        checkpoint()
     }
 
     private fun startInternal() {
@@ -203,6 +237,7 @@ class GameViewModel(
         _state.update { it.copy(phase = GamePhase.Paused) }
         audioManager.pauseMusic()
         audioManager.playSfx(Sfx.Pause)
+        checkpoint()
     }
 
     private fun resumeInternal() {
@@ -220,11 +255,66 @@ class GameViewModel(
         viewModelScope.launch {
             gameRepository.updateHighScore(score)
         }
+        if (gameOver) save(null) else checkpoint()
         if (gameOver) {
             audioManager.playSfx(Sfx.GameOver)
         }
         audioManager.pauseMusic()
         _state.update { it.copy(phase = if (gameOver) GamePhase.GameOver else GamePhase.Idle) }
+    }
+
+    private fun checkpoint() {
+        val d = dragon ?: return
+        val w = world ?: return
+        if (d.light <= 0f) return
+        fun point(p: Offset) = SavedPoint(p.x, p.y)
+        save(SavedGame(
+            width = worldSize.width, height = worldSize.height,
+            segments = d.getSegments().map { point(it.position) },
+            light = d.light, score = _state.value.score,
+            souls = w.getSouls().map { SavedSoul(it.id, point(it.position), it.radius, it.lightIntensity, it.pulsePhase) },
+            fog = w.getFogParticles().map { SavedFog(point(it.position), it.size, it.opacity, it.speed, it.direction) },
+            worldTimeMs = w.getTimeMs(), idleMs = balance.idleMs, erosionMs = balance.erosionMs
+        ))
+        checkpointMs = 0
+    }
+
+    private fun save(game: SavedGame?) {
+        savedGame = game
+        _state.update { it.copy(hasSavedGame = game != null) }
+        val revision = ++saveRevision
+        gameRepository.saveGame(game) { error ->
+            // Publish on Main, and do not let an older write overwrite a newer result.
+            viewModelScope.launch {
+                if (revision == saveRevision) _state.update { it.copy(
+                    persistenceError = if (error == null) null else "Sauvegarde impossible. La dernière sauvegarde réussie reste disponible."
+                ) }
+            }
+        }
+    }
+
+    private fun restoreGame(saved: SavedGame) {
+        loop.stop()
+        worldSize = Size(saved.width, saved.height)
+        fun offset(p: SavedPoint) = Offset(p.x, p.y)
+        dragon = Dragon().apply { restore(saved.segments.map(::offset), saved.light) }
+        world = World(worldSize, initialSoulCount = 0).apply {
+            restore(
+                saved.souls.map { Soul(it.id, offset(it.position), it.radius, it.light, it.pulse) },
+                saved.fog.map { FogParticle(offset(it.position), it.size, it.opacity, it.speed, it.direction) },
+                saved.worldTimeMs
+            )
+        }
+        if (viewportSize.isPlayable() && viewportSize != worldSize) {
+            dragon?.resize(worldSize, viewportSize)
+            world?.updateSize(viewportSize)
+            worldSize = viewportSize
+        }
+        balance = LightBalance(saved.idleMs, saved.erosionMs)
+        checkpointMs = 0
+        _state.update { it.copy(phase = GamePhase.Paused, score = saved.score) }
+        audioManager.prepareMusic("ambient")
+        publishWorld(0)
     }
 
     fun setMusicEnabled(enabled: Boolean) {

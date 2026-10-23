@@ -195,6 +195,15 @@ class World(
     /**
      * Réinitialise le monde.
      */
+    fun restore(savedSouls: List<Soul>, savedFog: List<FogParticle>, elapsedMs: Long) {
+        souls.clear()
+        souls.addAll(savedSouls)
+        fogParticles.clear()
+        fogParticles.addAll(savedFog)
+        nextSoulId = (souls.maxOfOrNull { it.id } ?: -1) + 1
+        timeMs = elapsedMs
+    }
+
     fun reset() {
         souls.clear()
         fogParticles.clear()

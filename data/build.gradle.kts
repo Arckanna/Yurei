@@ -22,6 +22,7 @@ android {
 }
 
 dependencies {
+    testImplementation(libs.junit4)
     implementation(libs.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
 }

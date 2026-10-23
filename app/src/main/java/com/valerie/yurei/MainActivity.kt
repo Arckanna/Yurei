@@ -1,6 +1,8 @@
 package com.valerie.yurei
 
 import android.app.Application
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,6 +10,14 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
+import com.valerie.yurei.ui.viewmodel.GameIntent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
@@ -77,7 +87,15 @@ fun YureiApp() {
         }
     }
 
+    val persistenceError by remember(viewModel) {
+        viewModel.state.map { it.persistenceError }.distinctUntilChanged()
+    }.collectAsState(initial = null)
+    val snackbar = remember { SnackbarHostState() }
+    LaunchedEffect(persistenceError) {
+        persistenceError?.let { snackbar.showSnackbar(it) }
+    }
     MaterialTheme(colorScheme = colors) {
+        Box(Modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
             startDestination = Route.Home.path
@@ -88,6 +106,9 @@ fun YureiApp() {
                 HomeScreen(
                     onStartGame = { viewModel.start() },
                     highScore = uiState.highScore,
+                    ready = uiState.ready,
+                    hasSavedGame = uiState.hasSavedGame,
+                    onContinue = { viewModel.event(GameIntent.Continue) },
                     onOpenSettings = { rootNav.toSettings() }
                 )
             }
@@ -114,6 +135,8 @@ fun YureiApp() {
                     onSfxEnabledChange = { viewModel.setSfxEnabled(it) }
                 )
             }
+        }
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
         }
     }
 }

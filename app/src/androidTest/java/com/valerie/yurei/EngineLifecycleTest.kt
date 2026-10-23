@@ -27,6 +27,7 @@ class EngineLifecycleTest {
     @Test fun backgroundFreezesWorldAndRecreationKeepsExplicitResume() {
         // Drive running states on Main: Compose's idle synchronisation otherwise
         // waits for this continuously updating game to end before the next click.
+        compose.waitUntil(5_000) { snapshot().ready }
         compose.activityRule.scenario.onActivity {
             ViewModelProvider(it)[GameViewModel::class.java].start()
         }
@@ -47,9 +48,13 @@ class EngineLifecycleTest {
         }
         compose.onNodeWithText("Quitter").performClick()
         compose.onNodeWithText("Commencer la partie").assertExists()
+        compose.onNodeWithText("Continuer la partie").performClick()
+        assertEquals(GamePhase.Paused, snapshot().phase)
+        compose.onNodeWithText("Reprendre").assertExists()
     }
 
     @Test fun restartAndBackFromPauseKeepGameUsable() {
+        compose.waitUntil(5_000) { snapshot().ready }
         compose.activityRule.scenario.onActivity {
             ViewModelProvider(it)[GameViewModel::class.java].start()
         }

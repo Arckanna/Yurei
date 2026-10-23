@@ -146,6 +146,15 @@ class Dragon(
      */
     fun getSegments(): List<DragonSegment> = segments.toList()
 
+    fun restore(positions: List<Offset>, restoredLight: Float) {
+        require(positions.isNotEmpty())
+        segments.clear()
+        positions.forEach { segments.add(DragonSegment(it, restoredLight)) }
+        length = positions.size
+        headPosition = positions.first()
+        setLight(restoredLight)
+    }
+
     fun moveBy(dx: Float, dy: Float, size: Size) {
         if (!dx.isFinite() || !dy.isFinite()) return
         updateHeadPosition((headPosition + Offset(dx, dy)).confinedTo(size, 48f))

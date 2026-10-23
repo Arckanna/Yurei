@@ -7,6 +7,18 @@
 
 ## [Non publié] - 2026-10-23
 
+### Sauvegarde de partie et lumière
+
+- Sauvegarde JSON versionnée dans DataStore : dimensions, segments, lumière, score, âmes, brume, temps du monde et temporisations de lumière.
+- Points de sauvegarde toutes les deux secondes de simulation, à la collecte, à la pause et au retour à l'accueil. Écritures atomiques ordonnées, indépendantes de la durée de vie du ViewModel.
+- Bouton « Continuer la partie » ; restauration en pause sans consommation de lumière hors du jeu. « Quitter » conserve la partie, une nouvelle partie la remplace et la fin de partie l'efface.
+- Validation du contenu et de la version ; message visible en cas d'échec de lecture ou d'écriture, sans blocage du démarrage d'une nouvelle partie.
+- Lumière initiale à 80 %. Perte de 0,2 point de pourcentage par seconde pendant le mouvement et les huit premières secondes de repos, puis 0,8 point par seconde. Une âme restitue 12 points et ajoute un segment.
+- Sous 15 % de lumière pendant huit secondes, perte d'un segment du corps en échange de 12 points de lumière. La tête seule peut s'éteindre. Ce premier réglage reste à affiner par des sessions jouées ; il ne garantit pas une durée de partie fixe.
+- Ajout de six tests de lumière, trois tests de sérialisation et un test Android de persistance. Lecture vérifiée dans un nouveau processus après arrêt forcé sur l'émulateur API 36.
+
+Une interruption brutale reprend le dernier point de sauvegarde effectivement écrit ; les changements plus récents peuvent être perdus. Aucun mécanisme ne peut terminer une écriture après la mort du processus.
+
 ### Stabilisation du moteur
 
 - Annulation du Job de la boucle à chaque arrêt pour empêcher les boucles concurrentes après un redémarrage.
@@ -20,7 +32,7 @@
 
 Validation : tests unitaires, compilation debug et APK de tests, lint (avec avertissements), puis 3 tests instrumentés réussis sur émulateur Android 16/API 36 (dont le test de contexte préexistant).
 
-La conservation de partie reste en mémoire : la sauvegarde après destruction du processus et le rééquilibrage de la lumière constituent des travaux distincts. Aucune mesure de performances sur appareil physique n'est incluse dans cette validation.
+La sauvegarde après destruction du processus et le rééquilibrage de la lumière ont ensuite été ajoutés (voir ci-dessus). Aucune mesure de performances sur appareil physique n'est incluse dans cette validation.
 
 ## [0.1.0] - 2025-10-05
 ### ✨ Première version du projet (prototype visuel)
