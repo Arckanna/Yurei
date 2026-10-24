@@ -107,6 +107,7 @@ fun YureiApp() {
                     onStartGame = { viewModel.start() },
                     highScore = uiState.highScore,
                     ready = uiState.ready,
+                    memoryUnlocked = uiState.memoryUnlocked,
                     hasSavedGame = uiState.hasSavedGame,
                     onContinue = { viewModel.event(GameIntent.Continue) },
                     onOpenSettings = { rootNav.toSettings() }

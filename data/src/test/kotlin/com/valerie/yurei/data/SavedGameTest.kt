@@ -23,12 +23,29 @@ class SavedGameTest {
         assertEquals(game, SavedGameCodec.decode(text))
     }
 
+    @Test fun legacySaveStartsTheJourneyWithoutLosingTheDragon() {
+        val old = """{"version":1,"width":300.0,"height":500.0,"segments":[{"x":150.0,"y":250.0}],"light":0.42,"score":30,"souls":[],"fog":[],"worldTimeMs":1000,"idleMs":0,"erosionMs":0}"""
+        val loaded = SavedGameCodec.decode(old)
+        assertEquals(30, loaded.score)
+        assertEquals(0, loaded.chapter)
+        assertFalse(loaded.completed)
+        assertTrue(loaded.journeyStarted)
+    }
+
+    @Test fun completedMemoryRoundTripsAndInvalidEndingIsRejected() {
+        val complete = game.copy(chapter = 2, chapterMs = 60_000, offerings = 4, journeyMs = 180_000, completed = true)
+        assertEquals(complete, SavedGameCodec.decode(SavedGameCodec.encode(complete)))
+        assertFalse(complete.copy(chapter = 1).isValid())
+        assertFalse(complete.copy(offerings = 0).isValid())
+        assertFalse(complete.copy(journeyMs = 10).isValid())
+    }
+
     @Test fun invalidStatesAndUnsupportedVersionsAreRejected() {
-        listOf(game.copy(width = 0f), game.copy(light = Float.NaN), game.copy(version = 2),
+        listOf(game.copy(width = 0f), game.copy(light = Float.NaN), game.copy(version = 3),
             game.copy(segments = emptyList()), game.copy(idleMs = -1),
             game.copy(souls = game.souls + game.souls)).forEach { assertFalse(it.isValid()) }
         assertThrows(IllegalArgumentException::class.java) { SavedGameCodec.decode("{broken") }
-        val unsupported = SavedGameCodec.encode(game).replace("\"version\":1", "\"version\":99")
+        val unsupported = SavedGameCodec.encode(game).replace("\"version\":2", "\"version\":99")
         assertThrows(IllegalArgumentException::class.java) { SavedGameCodec.decode(unsupported) }
     }
 }

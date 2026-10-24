@@ -29,6 +29,7 @@ import com.valerie.yurei.ui.theme.YureiTitleFont   // cf. Type.kt (section 3)
 fun HomeScreen(
     onStartGame: () -> Unit,
     highScore: Int = 0,
+    memoryUnlocked: Boolean = false,
     ready: Boolean = true,
     hasSavedGame: Boolean = false,
     onContinue: () -> Unit = {},
@@ -107,13 +108,12 @@ fun HomeScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                if (highScore > 0) {
-                    Text(
-                        text = "Meilleur score : $highScore",
-                        fontSize = 16.sp,
-                        color = Color.White,
-                        modifier = Modifier.shadow(2.dp, spotColor = Color(0x44000000))
-                    )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("I · LE LAC DES LANTERNES", color = Color.White, fontSize = 17.sp,
+                        modifier = Modifier.background(Color(0x880E1B2A), RoundedCornerShape(12.dp)).padding(12.dp))
+                    Text(if (memoryUnlocked) "La lanterne offerte · souvenir retrouvé" else "Un premier souvenir · 3 à 5 minutes",
+                        color = Color.White, fontSize = 13.sp,
+                        modifier = Modifier.background(Color(0x880E1B2A), RoundedCornerShape(8.dp)).padding(8.dp))
                 }
             }
 

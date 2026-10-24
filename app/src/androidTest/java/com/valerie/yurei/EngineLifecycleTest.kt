@@ -29,7 +29,10 @@ class EngineLifecycleTest {
         // waits for this continuously updating game to end before the next click.
         compose.waitUntil(5_000) { snapshot().ready }
         compose.activityRule.scenario.onActivity {
-            ViewModelProvider(it)[GameViewModel::class.java].start()
+            ViewModelProvider(it)[GameViewModel::class.java].apply {
+                start()
+                event(com.valerie.yurei.ui.viewmodel.GameIntent.Begin)
+            }
         }
         compose.waitUntil(5_000) { snapshot().dragon.segments.isNotEmpty() }
         compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
@@ -56,7 +59,10 @@ class EngineLifecycleTest {
     @Test fun restartAndBackFromPauseKeepGameUsable() {
         compose.waitUntil(5_000) { snapshot().ready }
         compose.activityRule.scenario.onActivity {
-            ViewModelProvider(it)[GameViewModel::class.java].start()
+            ViewModelProvider(it)[GameViewModel::class.java].apply {
+                start()
+                event(com.valerie.yurei.ui.viewmodel.GameIntent.Begin)
+            }
         }
         compose.waitUntil(5_000) { snapshot().dragon.segments.isNotEmpty() }
         compose.activityRule.scenario.onActivity {
@@ -65,6 +71,7 @@ class EngineLifecycleTest {
                 vm.pause()
                 vm.quit()
                 vm.start()
+                vm.event(com.valerie.yurei.ui.viewmodel.GameIntent.Begin)
                 assertEquals(GamePhase.Running, vm.state.value.phase)
             }
             vm.pause()

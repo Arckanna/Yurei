@@ -69,14 +69,17 @@ yurei/
 ├── ui/ # Écrans, menus, transitions (Jetpack Compose)
 ├── data/ # Sauvegardes, progression, paramètres
 ├── audio/ # Gestion des musiques et effets (SoundPool + ExoPlayer)
-└── app/src/main/res/raw/ # Fichiers sons (OGG/MP3) : soul_collect, pause, resume, game_over, button_tap, ambient
+└── audio/src/main/res/raw/ # Sons WAV : ambiance, souvenir et effets
 
 ---
 
-## 🔊 Fichiers audio (optionnel)
+## 🔊 Fichiers audio inclus
 
-Pour activer les sons, ajoutez dans `app/src/main/res/raw/` les fichiers (sans extension dans le code) :  
-`soul_collect`, `pause`, `resume`, `game_over`, `button_tap`, `ambient` (musique en boucle).
+Les ressources originales synthétisées sont incluses dans `audio/src/main/res/raw/` :
+`soul_collect`, `pause`, `resume`, `game_over`, `button_tap`, `ambient` (boucle) et `memory` (souvenir final).
+Elles sont reproductibles avec `python tools/generate_lantern_audio.py`, sans bibliothèque externe ni échantillon téléchargé.
+
+Le premier monde, **La lanterne offerte**, comporte trois chapitres de 60 à 100 secondes avec collecte d’âmes, refuges régénérants et souvenir final. Compter 3 à 5 minutes hors pauses, avec au moins une collecte par chapitre ; une exploration sans collecte peut durer davantage. La progression est sauvegardée et restaurée en pause après fermeture du processus.
 
 ---
 

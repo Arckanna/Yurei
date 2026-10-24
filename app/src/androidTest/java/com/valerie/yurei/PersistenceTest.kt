@@ -20,7 +20,8 @@ class PersistenceTest {
         light = 0.42f, score = 70,
         souls = listOf(SavedSoul(9, SavedPoint(80f, 80f), 20f, 0.8f, 1.3f)),
         fog = listOf(SavedFog(SavedPoint(20f, 50f), 60f, 0.2f, 0.3f, 0.4f)),
-        worldTimeMs = 54321, idleMs = 1234, erosionMs = 456
+        worldTimeMs = 90000, idleMs = 1234, erosionMs = 456,
+        chapter = 1, chapterMs = 30000, offerings = 2, journeyMs = 90000
     )
 
     // Run separately with -e persistenceMode seed / verify and force-stop between
@@ -60,7 +61,15 @@ class PersistenceTest {
             assertEquals(0.42f, restored.dragon.segments.first().light, 0.00001f)
             assertEquals(150f, restored.dragon.segments.first().position.x, 0f)
             SystemClock.sleep(200)
-            assertEquals(restored, vm.state.value)
+            // Preferences load independently; only the paused simulation must stay frozen.
+            val paused = vm.state.value
+            assertEquals(restored.dragon, paused.dragon)
+            assertEquals(restored.souls, paused.souls)
+            assertEquals(restored.fogParticles, paused.fogParticles)
+            assertEquals(restored.journeyMs, paused.journeyMs)
+            assertEquals(GamePhase.Paused, paused.phase)
+            assertEquals(1, paused.chapter)
+            assertEquals(90000L, paused.journeyMs)
             // Quit must retain the world, and a new game must invalidate it.
             instrumentation.runOnMainSync { vm.quit() }
             assertEquals(fixture, repository.loadGame())

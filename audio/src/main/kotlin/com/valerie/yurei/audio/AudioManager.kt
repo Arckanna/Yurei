@@ -18,6 +18,8 @@ class AudioManager(
     private var soundPool: SoundPool? = null
     private val soundIds = mutableMapOf<Sfx, Int>()
     private var musicPlayer: ExoPlayer? = null
+    private var wantsMusic = false
+    private val loadedSounds = mutableSetOf<Int>()
 
     var sfxEnabled: Boolean = true
         private set
@@ -37,6 +39,9 @@ class AudioManager(
             .setMaxStreams(4)
             .setAudioAttributes(attrs)
             .build()
+        soundPool?.setOnLoadCompleteListener { _, id, status ->
+            if (status == 0) loadedSounds.add(id)
+        }
         Sfx.values().forEach { sfx ->
             val resId = context.resources.getIdentifier(sfx.rawName, "raw", context.packageName)
             if (resId != 0) {
@@ -51,6 +56,7 @@ class AudioManager(
     fun playSfx(sfx: Sfx) {
         if (!sfxEnabled) return
         val id = soundIds[sfx] ?: return
+        if (id !in loadedSounds) return
         soundPool?.play(id, 0.7f, 0.7f, 1, 0, 1f)
     }
 
@@ -66,9 +72,7 @@ class AudioManager(
      */
     fun setMusicEnabled(enabled: Boolean) {
         musicEnabled = enabled
-        if (!enabled) {
-            musicPlayer?.pause()
-        }
+        musicPlayer?.playWhenReady = enabled && wantsMusic
     }
 
     /**
@@ -80,9 +84,14 @@ class AudioManager(
         if (resId == 0) return
         if (musicPlayer == null) {
             musicPlayer = ExoPlayer.Builder(context).build().apply {
-                repeatMode = if (loop) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
+                setAudioAttributes(com.google.android.exoplayer2.audio.AudioAttributes.Builder()
+                    .setUsage(com.google.android.exoplayer2.C.USAGE_GAME)
+                    .setContentType(com.google.android.exoplayer2.C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
+                setHandleAudioBecomingNoisy(true)
+                volume = 0.65f
             }
         }
+        musicPlayer?.repeatMode = if (loop) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
         val uri = Uri.parse("android.resource://${context.packageName}/$resId")
         musicPlayer?.setMediaItem(MediaItem.fromUri(uri))
         musicPlayer?.prepare()
@@ -92,14 +101,15 @@ class AudioManager(
      * Démarre la musique (si préparée et musicEnabled).
      */
     fun startMusic() {
-        if (!musicEnabled) return
-        musicPlayer?.playWhenReady = true
+        wantsMusic = true
+        musicPlayer?.playWhenReady = musicEnabled
     }
 
     /**
      * Met la musique en pause.
      */
     fun pauseMusic() {
+        wantsMusic = false
         musicPlayer?.playWhenReady = false
     }
 
@@ -110,6 +120,7 @@ class AudioManager(
         soundPool?.release()
         soundPool = null
         soundIds.clear()
+        loadedSounds.clear()
         musicPlayer?.release()
         musicPlayer = null
     }

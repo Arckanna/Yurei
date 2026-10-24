@@ -2,7 +2,7 @@ package com.valerie.yurei.ui.viewmodel
 
 import androidx.compose.ui.geometry.Offset
 
-enum class GamePhase { Idle, Running, Paused, GameOver }
+enum class GamePhase { Idle, Intro, Running, Paused, Completed, GameOver }
 
 data class DragonSegmentVM(
     val position: Offset,
@@ -27,6 +27,15 @@ data class FogParticleVM(
 )
 
 data class GameUiState(
+    val chapter: Int = 0,
+    val chapterMs: Long = 0,
+    val offerings: Int = 0,
+    val journeyProgress: Float = 0f,
+    val journeyMs: Long = 0,
+    val refuge: Offset = Offset.Zero,
+    val refugeRadius: Float = 0f,
+    val sheltered: Boolean = false,
+    val memoryUnlocked: Boolean = false,
     val ready: Boolean = false,
     val hasSavedGame: Boolean = false,
     val persistenceError: String? = null,
@@ -43,6 +52,7 @@ data class GameUiState(
 
 sealed class GameIntent {
     data object Continue : GameIntent()
+    data object Begin : GameIntent()
     data object Start : GameIntent()
     data object Pause : GameIntent()
     data object Resume : GameIntent()

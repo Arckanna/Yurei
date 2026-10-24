@@ -9,6 +9,7 @@ import com.valerie.yurei.audio.AudioManager
 import com.valerie.yurei.audio.Sfx
 import com.valerie.yurei.core.engine.GameLoop
 import com.valerie.yurei.core.engine.LightBalance
+import com.valerie.yurei.core.world.LanternJourney
 import com.valerie.yurei.core.world.Soul
 import com.valerie.yurei.core.world.FogParticle
 import com.valerie.yurei.data.model.*
@@ -40,6 +41,8 @@ class GameViewModel(
     private val _state = MutableStateFlow(GameUiState())
     val state: StateFlow<GameUiState> = _state
 
+    private var journey = LanternJourney()
+    private var journeyStarted = false
     private var balance = LightBalance()
     private var checkpointMs = 0L
     private var savedGame: SavedGame? = null
@@ -56,7 +59,7 @@ class GameViewModel(
         d.update(dt)
         w.update(dt)
 
-        balance.update(d, dt)
+        journey.updateLight(d, balance, worldSize, dt)
 
         val collectedSoulIds = w.checkSoulCollisions(d.headPosition, d.getHeadRadius())
         if (collectedSoulIds.isNotEmpty()) {
@@ -67,6 +70,11 @@ class GameViewModel(
             audioManager.playSfx(Sfx.SoulCollect)
         }
 
+        val chapterChanged = journey.update(dt, collectedSoulIds.size)
+        if (chapterChanged && !journey.completed) {
+            d.setLight((d.light + 0.2f).coerceAtMost(1f))
+            audioManager.playSfx(Sfx.SoulCollect)
+        }
         frameCount++
         val now = System.nanoTime() / 1_000_000L
         val fps = if (now - lastFpsUpdate >= 1000) {
@@ -80,8 +88,12 @@ class GameViewModel(
 
         publishWorld(fps)
 
+        if (journey.completed) {
+            finishJourney()
+            return@GameLoop
+        }
         checkpointMs += dt
-        if (d.light > 0f && (checkpointMs >= 2_000L || collectedSoulIds.isNotEmpty())) checkpoint()
+        if (d.light > 0f && (checkpointMs >= 2_000L || collectedSoulIds.isNotEmpty() || chapterChanged)) checkpoint()
         if (d.light <= 0f && _state.value.phase == GamePhase.Running) {
             stopInternal(gameOver = true)
             nav.toHome()
@@ -106,6 +118,7 @@ class GameViewModel(
                     _state.update {
                         it.copy(
                             highScore = prefs.highScore,
+                            memoryUnlocked = prefs.memoryUnlocked || it.memoryUnlocked,
                             musicEnabled = prefs.musicEnabled,
                             sfxEnabled = prefs.sfxEnabled
                         )
@@ -114,6 +127,14 @@ class GameViewModel(
                     audioManager.setSfxEnabled(prefs.sfxEnabled)
                 }
         }
+    }
+
+    private fun finishJourney() {
+        loop.stop()
+        _state.update { it.copy(phase = GamePhase.Completed, memoryUnlocked = true) }
+        checkpoint()
+        audioManager.prepareMusic("memory", loop = false)
+        audioManager.startMusic()
     }
 
     private fun publishWorld(fps: Int = _state.value.fps) {
@@ -138,6 +159,14 @@ class GameViewModel(
         }
 
         _state.update { it.copy(
+            chapter = journey.chapter,
+            chapterMs = journey.chapterMs,
+            offerings = journey.offerings,
+            journeyProgress = journey.progress(),
+            journeyMs = journey.elapsedMs,
+            refuge = journey.refuge(worldSize),
+            refugeRadius = journey.refugeRadius(worldSize),
+            sheltered = journey.isSheltered(d.headPosition, worldSize),
             dragon = DragonVM(segments, d.getHeadRadius()),
             souls = souls,
             fogParticles = fogParticles,
@@ -154,7 +183,7 @@ class GameViewModel(
         val previousSize = worldSize
         worldSize = size
         if (world == null) {
-            if (_state.value.phase == GamePhase.Running || _state.value.phase == GamePhase.Paused) {
+            if (_state.value.phase == GamePhase.Running || _state.value.phase == GamePhase.Paused || _state.value.phase == GamePhase.Intro) {
                 resetWorld()
                 if (_state.value.phase == GamePhase.Running) loop.start()
             }
@@ -168,10 +197,18 @@ class GameViewModel(
     fun event(intent: GameIntent) {
         if (!_state.value.ready) return
         when (intent) {
+            is GameIntent.Begin -> {
+                if (_state.value.phase == GamePhase.Intro) {
+                    journeyStarted = true
+                    startInternal()
+                    checkpoint()
+                }
+            }
             is GameIntent.Continue -> {
                 val saved = savedGame ?: return
                 restoreGame(saved)
                 nav.toGame()
+                if (saved.completed) audioManager.startMusic()
             }
             is GameIntent.Start -> {
                 if (_state.value.phase != GamePhase.Running) {
@@ -181,12 +218,16 @@ class GameViewModel(
                     world = null
                     _state.update { it.copy(score = 0, dragon = DragonVM(), souls = emptyList(), fogParticles = emptyList()) }
                     if (worldSize.isPlayable()) resetWorld()
+                    _state.update { it.copy(phase = GamePhase.Intro) }
                     nav.toGame()
-                    startInternal()
                 }
             }
             is GameIntent.Pause -> {
                 if (_state.value.phase == GamePhase.Running) pauseInternal()
+                else {
+                    audioManager.pauseMusic()
+                    if (_state.value.phase == GamePhase.Intro || _state.value.phase == GamePhase.Completed) checkpoint()
+                }
             }
             is GameIntent.Resume -> {
                 if (_state.value.phase == GamePhase.Paused) resumeInternal()
@@ -216,6 +257,8 @@ class GameViewModel(
         val centerY = worldSize.height / 2f
         dragon = Dragon(Offset(centerX, centerY), initialLength = 1, initialLight = LightBalance.INITIAL_LIGHT)
         balance = LightBalance()
+        journey = LanternJourney()
+        journeyStarted = _state.value.phase == GamePhase.Running
         checkpointMs = 0L
         world = World(worldSize, initialSoulCount = 5)
         frameCount = 0
@@ -274,7 +317,9 @@ class GameViewModel(
             light = d.light, score = _state.value.score,
             souls = w.getSouls().map { SavedSoul(it.id, point(it.position), it.radius, it.lightIntensity, it.pulsePhase) },
             fog = w.getFogParticles().map { SavedFog(point(it.position), it.size, it.opacity, it.speed, it.direction) },
-            worldTimeMs = w.getTimeMs(), idleMs = balance.idleMs, erosionMs = balance.erosionMs
+            worldTimeMs = w.getTimeMs(), idleMs = balance.idleMs, erosionMs = balance.erosionMs,
+            chapter = journey.chapter, chapterMs = journey.chapterMs, offerings = journey.offerings,
+            journeyMs = journey.elapsedMs, completed = journey.completed, journeyStarted = journeyStarted
         ))
         checkpointMs = 0
     }
@@ -310,10 +355,16 @@ class GameViewModel(
             world?.updateSize(viewportSize)
             worldSize = viewportSize
         }
+        journey = LanternJourney(saved.chapter, saved.chapterMs, saved.offerings, saved.journeyMs, saved.completed)
+        journeyStarted = saved.journeyStarted
         balance = LightBalance(saved.idleMs, saved.erosionMs)
         checkpointMs = 0
-        _state.update { it.copy(phase = GamePhase.Paused, score = saved.score) }
-        audioManager.prepareMusic("ambient")
+        _state.update { it.copy(phase = when {
+            saved.completed -> GamePhase.Completed
+            !saved.journeyStarted -> GamePhase.Intro
+            else -> GamePhase.Paused
+        }, score = saved.score, memoryUnlocked = it.memoryUnlocked || saved.completed) }
+        audioManager.prepareMusic(if (saved.completed) "memory" else "ambient", loop = !saved.completed)
         publishWorld(0)
     }
 

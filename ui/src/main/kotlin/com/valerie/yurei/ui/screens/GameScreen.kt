@@ -5,25 +5,29 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.valerie.yurei.core.world.LanternJourney
 import com.valerie.yurei.ui.components.PauseOverlay
-import com.valerie.yurei.ui.viewmodel.GameIntent
-import com.valerie.yurei.ui.viewmodel.GamePhase
-import com.valerie.yurei.ui.viewmodel.GameUiState
+import com.valerie.yurei.ui.viewmodel.*
 import kotlinx.coroutines.flow.StateFlow
+
+private val Ink = Color(0xFF101D30)
+private val Paper = Color(0xFFF0E7D5)
+private val Gold = Color(0xFFE6C68A)
 
 @Composable
 fun GameScreen(
@@ -33,178 +37,132 @@ fun GameScreen(
     onUpdateWorldSize: ((Size) -> Unit)? = null
 ) {
     val ui by state.collectAsState()
-
-    // Retour ouvre la pause ou reprend la partie sans quitter la route du jeu.
-    BackHandler(enabled = ui.phase == GamePhase.Running || ui.phase == GamePhase.Paused) {
-        onEvent(if (ui.phase == GamePhase.Running) GameIntent.Pause else GameIntent.Resume)
+    BackHandler {
+        onEvent(when (ui.phase) {
+            GamePhase.Running -> GameIntent.Pause
+            GamePhase.Paused -> GameIntent.Resume
+            else -> GameIntent.Quit
+        })
     }
-
-    Column(Modifier.fillMaxSize()) {
-        // Petit HUD
-        Row(
-            Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Score: ${ui.score}", color = Color.White)
-            Text("FPS: ${ui.fps}", color = Color.White)
+    if (ui.phase == GamePhase.Completed) {
+        MemoryScreen(onHome = { onEvent(GameIntent.Quit) }, onReplay = { onEvent(GameIntent.Start) })
+        return
+    }
+    Box(Modifier.fillMaxSize().background(Ink).systemBarsPadding()) {
+        Column(Modifier.fillMaxSize()) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text("LE LAC DES LANTERNES", color = Gold, fontSize = 11.sp, letterSpacing = 2.sp)
+                    Text(LanternJourney.titles[ui.chapter], color = Paper, fontSize = 18.sp)
+                }
+                Canvas(Modifier.size(68.dp, 24.dp).semantics {
+                    contentDescription = "Étape ${ui.chapter + 1} sur 3, ${ui.offerings} lumières recueillies sur 4"
+                }) {
+                    repeat(3) { i ->
+                        drawCircle(if (i <= ui.chapter) Gold else Paper.copy(alpha = 0.2f),
+                            radius = if (i == ui.chapter) 5.dp.toPx() else 3.dp.toPx(),
+                            center = androidx.compose.ui.geometry.Offset(size.width * (i + 0.5f) / 3, size.height / 2))
+                    }
+                }
+            }
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                val currentEvent by rememberUpdatedState(onEvent)
+                Canvas(Modifier.fillMaxSize()
+                    .onSizeChanged { onUpdateWorldSize?.invoke(Size(it.width.toFloat(), it.height.toFloat())) }
+                    .semantics { contentDescription = "Dragon spectral. Glissez pour recueillir les lumières. La lanterne est un refuge." }
+                    .then(if (ui.phase == GamePhase.Running) Modifier.pointerInput(Unit) {
+                        detectDragGestures { change, drag ->
+                            change.consume()
+                            currentEvent(GameIntent.Drag(drag.x, drag.y))
+                        }
+                    } else Modifier)) {
+                    drawLanternWorld(ui)
+                }
+                if (ui.phase == GamePhase.Running && ui.chapterMs < 6_000 && ui.chapter > 0) {
+                    Text("Un écho se rapproche…", color = Paper, modifier = Modifier
+                        .align(Alignment.TopCenter).padding(top = 24.dp), fontSize = 16.sp)
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                if (ui.phase == GamePhase.Running) {
+                    TextButton(onClick = { onEvent(GameIntent.Pause) }) { Text("Pause", color = Paper) }
+                    val light = ui.dragon.segments.firstOrNull()?.light ?: 0.8f
+                    Canvas(Modifier.size(110.dp, 28.dp).semantics {
+                        contentDescription = "Lumière ${(light * 100).toInt()} pour cent" +
+                            if (ui.sheltered) ", refuge" else ""
+                    }) {
+                        drawLine(Paper.copy(alpha = 0.15f), androidx.compose.ui.geometry.Offset(0f, size.height / 2),
+                            androidx.compose.ui.geometry.Offset(size.width, size.height / 2), 3.dp.toPx())
+                        drawLine(if (ui.sheltered) Gold else Paper, androidx.compose.ui.geometry.Offset(0f, size.height / 2),
+                            androidx.compose.ui.geometry.Offset(size.width * light, size.height / 2), 3.dp.toPx())
+                    }
+                    TextButton(onClick = { onEvent(GameIntent.Quit) }) { Text("Quitter", color = Paper) }
+                } else Spacer(Modifier.height(48.dp))
+            }
         }
-
-        // Zone de jeu + drag (désactivé quand Paused ou GameOver)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF1A1A2E), // Bleu très foncé
-                            Color(0xFF16213E), // Bleu foncé
-                            Color(0xFF0F3460)  // Bleu nuit
-                        )
-                    )
-                )
-                .then(
-                    if (ui.phase == GamePhase.Running) {
-                        Modifier.pointerInput(Unit) {
-                            detectDragGestures { _, drag ->
-                                onEvent(GameIntent.Drag(drag.x, drag.y))
-                            }
-                        }
-                    } else {
-                        Modifier // pas d'input quand en pause
-                    }
-                )
-        ) {
-            Canvas(
-                modifier = Modifier.fillMaxSize().onSizeChanged {
-                    onUpdateWorldSize?.invoke(Size(it.width.toFloat(), it.height.toFloat()))
-                }
-            ) {
-
-                // 1. Dessiner la brume en arrière-plan
-                ui.fogParticles.forEach { fog ->
-                    drawCircle(
-                        color = Color.White.copy(alpha = fog.opacity),
-                        radius = fog.size / 2f,
-                        center = fog.position
-                    )
-                }
-
-                // 2. Dessiner les âmes lumineuses
-                ui.souls.forEach { soul ->
-                    // Halo extérieur (lumière diffuse)
-                    drawCircle(
-                        color = Color(0xFFFFD700).copy(alpha = soul.lightIntensity * 0.3f),
-                        radius = soul.radius * 1.5f,
-                        center = soul.position
-                    )
-                    // Âme principale
-                    drawCircle(
-                        color = Color(0xFFFFD700).copy(alpha = soul.lightIntensity),
-                        radius = soul.radius,
-                        center = soul.position
-                    )
-                    // Centre brillant
-                    drawCircle(
-                        color = Color.White.copy(alpha = soul.lightIntensity * 0.8f),
-                        radius = soul.radius * 0.5f,
-                        center = soul.position
-                    )
-                }
-
-                // 3. Dessiner le dragon segmenté
-                val dragon = ui.dragon
-                if (dragon.segments.isNotEmpty()) {
-                    // Dessiner les connexions entre segments
-                    val segments = dragon.segments
-                    
-                    for (i in 0 until segments.size - 1) {
-                        val current = segments[i].position
-                        val next = segments[i + 1].position
-                        
-                        val path = Path().apply {
-                            moveTo(current.x, current.y)
-                            lineTo(next.x, next.y)
-                        }
-                        
-                        val segmentLight = segments[i].light
-                        drawPath(
-                            path = path,
-                            color = Color(0xFF64B5F6).copy(alpha = segmentLight),
-                            style = Stroke(
-                                width = 12f + 8f * segmentLight
-                            )
-                        )
-                    }
-                    
-                    // Dessiner chaque segment
-                    segments.forEachIndexed { index, segment ->
-                        val radius = if (index == 0) {
-                            // Tête : plus grande
-                            dragon.headRadius * segment.light
-                        } else {
-                            // Corps : taille décroissante
-                            (20f + 10f * segment.light) * (1f - index * 0.05f).coerceAtLeast(0.5f)
-                        }
-                        
-                        // Halo lumineux autour du segment
-                        drawCircle(
-                            color = Color(0xFF64B5F6).copy(alpha = segment.light * 0.2f),
-                            radius = radius * 1.8f,
-                            center = segment.position
-                        )
-                        
-                        // Segment principal
-                        drawCircle(
-                            color = Color(0xFF64B5F6).copy(alpha = segment.light),
-                            radius = radius,
-                            center = segment.position
-                        )
-                        
-                        // Centre brillant (surtout pour la tête)
-                        if (index == 0) {
-                            drawCircle(
-                                color = Color.White.copy(alpha = segment.light * 0.6f),
-                                radius = radius * 0.4f,
-                                center = segment.position
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Boutons Pause/Quit visibles quand on joue
-            if (ui.phase == GamePhase.Running) {
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Button(onClick = { onEvent(GameIntent.Pause) }) { Text("Pause") }
-                    Button(onClick = { onEvent(GameIntent.Quit) }) { Text("Quitter") }
-                }
-            }
-
-            if (ui.ready && (ui.phase == GamePhase.Idle || ui.phase == GamePhase.GameOver)) {
+        when (ui.phase) {
+            GamePhase.Intro -> JourneyIntro { onEvent(GameIntent.Begin) }
+            GamePhase.Paused -> PauseOverlay(
+                onResume = { onEvent(GameIntent.Resume) },
+                onRestart = { onEvent(GameIntent.Start) },
+                onSettings = { onOpenSettings?.invoke() },
+                onQuit = { onEvent(GameIntent.Quit) }
+            )
+            GamePhase.Idle, GamePhase.GameOver -> if (ui.ready) {
                 Button(onClick = { onEvent(GameIntent.Start) }, modifier = Modifier.align(Alignment.Center)) {
                     Text("Commencer la partie")
                 }
             }
+            else -> Unit
+        }
+    }
+}
 
-            // Overlay Pause
-            if (ui.phase == GamePhase.Paused) {
-                PauseOverlay(
-                    onResume = { onEvent(GameIntent.Resume) },
-                    onRestart = {
-                        onEvent(GameIntent.Quit)   // Idle
-                        onEvent(GameIntent.Start)  // relance propre
-                    },
-                    onSettings = { onOpenSettings?.invoke() ?: onEvent(GameIntent.Resume) },
-                    onQuit = {
-                        onEvent(GameIntent.Quit)
-                    }
-                )
+@Composable
+private fun JourneyIntro(onBegin: () -> Unit) {
+    Box(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.9f)), contentAlignment = Alignment.Center) {
+        Column(Modifier.widthIn(max = 420.dp).verticalScroll(rememberScrollState()).padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("一  /  PREMIER SOUVENIR", color = Gold, fontSize = 12.sp, letterSpacing = 2.sp)
+            Spacer(Modifier.height(24.dp))
+            Text("Le lac des\nlanternes", color = Paper, fontSize = 36.sp, lineHeight = 44.sp, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(24.dp))
+            Text("Au-delà de la brume, une lumière vous attend.", color = Paper, fontSize = 17.sp, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(24.dp))
+            Text("Glissez pour guider le dragon vers les âmes dorées.\n\nRecueillez quatre lumières dans chaque étape. Le lac s’ouvrira à son rythme.\n\nPrès de la grande lanterne, vous pouvez vous reposer : votre lumière se régénère.",
+                color = Paper.copy(alpha = 0.8f), fontSize = 15.sp, lineHeight = 23.sp, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(24.dp))
+            Text("3–5 MINUTES · À VOTRE RYTHME", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp)
+            Spacer(Modifier.height(20.dp))
+            Button(onClick = onBegin, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) {
+                Text("Entrer dans la brume", modifier = Modifier.padding(8.dp))
             }
         }
+    }
+}
+
+@Composable
+fun MemoryScreen(onHome: () -> Unit, onReplay: () -> Unit) {
+    Column(Modifier.fillMaxSize().background(Ink).systemBarsPadding().verticalScroll(rememberScrollState())
+        .padding(horizontal = 28.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("SOUVENIR RETROUVÉ", color = Gold, fontSize = 12.sp, letterSpacing = 3.sp)
+        Canvas(Modifier.fillMaxWidth().height(260.dp).semantics {
+            contentDescription = "Sur la rive, une petite silhouette offre une lanterne au dragon. Leurs reflets se rejoignent dans l’eau."
+        }) { drawLanternMemory() }
+        Text("La lanterne offerte", color = Paper, fontSize = 30.sp, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(18.dp))
+        Text("Avant la brume, quelqu’un vous attendait sur cette rive.\n\nUne petite main avait levé une lanterne. Vous n’aviez pas besoin de retrouver le chemin seul.",
+            color = Paper.copy(alpha = 0.85f), fontSize = 17.sp, lineHeight = 26.sp, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(20.dp))
+        Text("La lumière reçue demeure en vous.", color = Gold, fontSize = 16.sp, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(28.dp))
+        Button(onClick = onHome, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) {
+            Text("Retour au sanctuaire")
+        }
+        TextButton(onClick = onReplay) { Text("Rejouer ce monde", color = Paper) }
     }
 }

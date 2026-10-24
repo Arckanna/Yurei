@@ -7,6 +7,15 @@
 
 ## [Non publié] - 2026-10-23
 
+### Premier monde : La lanterne offerte
+
+- Trois chapitres jouables avec paysage nocturne, torii, brume, âmes et refuges lumineux ; introduction et souvenir final illustré.
+- Chaque chapitre dure 60 secondes avec quatre âmes collectées, ou 100 secondes avec au moins une âme. Le parcours vise 3 à 5 minutes de simulation active ; les pauses et les périodes sans collecte peuvent prolonger cette durée.
+- Régénération de lumière dans les refuges, transitions progressives et réserve minimale de 8 % pour éviter une extinction punitive dans ce premier monde.
+- Ambiance originale synthétisée, effets et musique du souvenir inclus dans l’APK ; génération reproductible avec `tools/generate_lantern_audio.py`.
+- Sauvegarde version 2 : chapitre, temps, offrandes, introduction et fin. Lecture des anciennes sauvegardes ; souvenir débloqué conservé indépendamment des nouvelles parties.
+- Validation : tests unitaires, builds debug/release, lint sans erreur ; parcours Android automatisé en temps réel jusqu’au souvenir (184 secondes), restauration du souvenir et reprise à mi-parcours après arrêt forcé du processus. Vérification visuelle des écrans d’introduction, de jeu et de fin sur émulateur API 36.
+
 ### Sauvegarde de partie et lumière
 
 - Sauvegarde JSON versionnée dans DataStore : dimensions, segments, lumière, score, âmes, brume, temps du monde et temporisations de lumière.
