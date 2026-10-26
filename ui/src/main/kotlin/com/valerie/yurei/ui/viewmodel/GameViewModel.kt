@@ -54,11 +54,18 @@ class GameViewModel(
     private var frameCount = 0
     private var lastFpsUpdate = System.nanoTime() / 1_000_000L
 
-    private val loop = GameLoop(viewModelScope) { dt ->
+    private val loop = GameLoop(viewModelScope) { dt, activeMs ->
         if (_state.value.phase != GamePhase.Running) return@GameLoop
         val d = dragon ?: return@GameLoop
         val w = world ?: return@GameLoop
 
+        if (activeMs >= challenge.remainingMs) {
+            challenge.tick(activeMs, 0, false)
+            d.setLight(0.15f)
+            publishWorld()
+            stopInternal(gameOver = true)
+            return@GameLoop
+        }
         challenge.move(d, worldSize, dt)
         d.update(dt)
         w.update(dt)
@@ -72,7 +79,7 @@ class GameViewModel(
             audioManager.playSfx(Sfx.SoulCollect)
         }
 
-        val hit = challenge.tick(dt, collectedSoulIds.size, challenge.touchesTail(d))
+        val hit = challenge.tick(activeMs, collectedSoulIds.size, challenge.touchesTail(d))
         if (hit) {
             repeat(3) { d.removeSegment() }
             audioManager.playSfx(Sfx.GameOver)
@@ -101,7 +108,7 @@ class GameViewModel(
             finishJourney()
             return@GameLoop
         }
-        checkpointMs += dt
+        checkpointMs += activeMs
         if (d.light > 0f && (checkpointMs >= 2_000L || collectedSoulIds.isNotEmpty() || chapterChanged || hit)) checkpoint()
         if (challenge.lost && _state.value.phase == GamePhase.Running) {
             stopInternal(gameOver = true)
@@ -286,7 +293,18 @@ class GameViewModel(
         audioManager.startMusic()
     }
 
+    private fun settleActiveTime(): Boolean {
+        challenge.tick(loop.consumePendingTime(), 0, false)
+        dragon?.setLight((0.15f + 0.85f * challenge.remainingMs / 180_000f).coerceIn(0.15f, 1f))
+        publishWorld()
+        return challenge.lost
+    }
+
     private fun pauseInternal() {
+        if (settleActiveTime()) {
+            stopInternal(gameOver = true)
+            return
+        }
         loop.stop()
         _state.update { it.copy(phase = GamePhase.Paused) }
         audioManager.pauseMusic()
@@ -304,17 +322,18 @@ class GameViewModel(
     }
 
     private fun stopInternal(gameOver: Boolean) {
+        val ended = gameOver || (_state.value.phase == GamePhase.Running && settleActiveTime())
         loop.stop()
         val score = _state.value.score
         viewModelScope.launch {
             gameRepository.updateHighScore(score)
         }
-        if (gameOver) save(null) else checkpoint()
-        if (gameOver) {
+        if (ended) save(null) else checkpoint()
+        if (ended) {
             audioManager.playSfx(Sfx.GameOver)
         }
         audioManager.pauseMusic()
-        _state.update { it.copy(phase = if (gameOver) GamePhase.GameOver else GamePhase.Idle) }
+        _state.update { it.copy(phase = if (ended) GamePhase.GameOver else GamePhase.Idle) }
     }
 
     private fun checkpoint() {

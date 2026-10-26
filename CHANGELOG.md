@@ -9,6 +9,8 @@
 
 ### Objectif porté à 30 âmes
 
+- Chronomètre : décompte du temps monotone actif complet, indépendant du pas physique plafonné à 50 ms. Les ralentissements n’allongent plus les trois minutes ni la protection après collision. Le reliquat est décompté avant pause ou sortie ; le temps passé en pause est exclu. Une échéance dépassée est traitée avant toute nouvelle collecte. Les animations restent liées au temps de simulation pour éviter les sauts.
+
 - Échelle commune : simulation dans un terrain logique de 1080 × 1920 unités, rendu uniforme centré sans déformation. Corps, vitesse, âmes, collisions et marges des berges partagent désormais le même repère, quelle que soit la résolution ou le format de fenêtre. Les anciennes positions sauvegardées sont adaptées à ce terrain à la restauration ; les changements de fenêtre ultérieurs ne déforment plus la partie. Le joystick conserve ses dimensions tactiles en dp.
 
 - Contrôles : joystick flottant au point de contact, zone neutre de 14 dp, repère de direction et poignée visuelle. Les petites corrections vers le centre ne retournent plus le dragon ; revenir au centre ou relâcher conserve le cap. Le joystick disparaît à la pause ou à la fin du contact.
