@@ -12,6 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.geometry.Offset
+import com.valerie.yurei.core.world.GameViewport
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -69,7 +72,16 @@ fun GameScreen(
                     .onSizeChanged { onUpdateWorldSize?.invoke(Size(it.width.toFloat(), it.height.toFloat())) }
                     .semantics { contentDescription = "Dragon en mouvement continu. Glissez pour orienter sa course et évitez sa queue." }
                 ) {
-                    drawLanternWorld(ui)
+                    if (size.width > 0 && size.height > 0) {
+                        val viewport = GameViewport.fit(size)
+                        withTransform({
+                            translate(viewport.offset.x, viewport.offset.y)
+                            scale(viewport.scale, viewport.scale, pivot = Offset.Zero)
+                            clipRect(0f, 0f, GameViewport.worldSize.width, GameViewport.worldSize.height)
+                        }) {
+                            drawLanternWorld(ui, GameViewport.worldSize)
+                        }
+                    }
                 }
                 if (ui.phase == GamePhase.Running) {
                     SteeringJoystick(Modifier.matchParentSize()) { dx, dy ->

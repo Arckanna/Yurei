@@ -9,6 +9,8 @@
 
 ### Objectif porté à 30 âmes
 
+- Échelle commune : simulation dans un terrain logique de 1080 × 1920 unités, rendu uniforme centré sans déformation. Corps, vitesse, âmes, collisions et marges des berges partagent désormais le même repère, quelle que soit la résolution ou le format de fenêtre. Les anciennes positions sauvegardées sont adaptées à ce terrain à la restauration ; les changements de fenêtre ultérieurs ne déforment plus la partie. Le joystick conserve ses dimensions tactiles en dp.
+
 - Contrôles : joystick flottant au point de contact, zone neutre de 14 dp, repère de direction et poignée visuelle. Les petites corrections vers le centre ne retournent plus le dragon ; revenir au centre ou relâcher conserve le cap. Le joystick disparaît à la pause ou à la fin du contact.
 
 - 30 âmes en trois minutes ; transitions visuelles à 10 et 20 collectes.

@@ -16,7 +16,7 @@ import org.junit.Test
 class PersistenceTest {
     private val fixture = SavedGame(
         version = 4, remainingMs = 90000, collected = 8, graceMs = 750,
-        width = 300f, height = 500f,
+        width = 1080f, height = 1920f,
         segments = listOf(SavedPoint(150f, 250f), SavedPoint(140f, 240f)),
         light = 0.42f, score = 70,
         souls = listOf(SavedSoul(9, SavedPoint(80f, 80f), 20f, 0.8f, 1.3f)),
@@ -74,6 +74,14 @@ class PersistenceTest {
             assertEquals(750L, paused.collisionGraceMs)
             assertEquals(1, paused.chapter)
             assertEquals(90000L, paused.journeyMs)
+            // Changing physical resolution must not reshape a paused logical world.
+            listOf(androidx.compose.ui.geometry.Size(360f, 640f),
+                androidx.compose.ui.geometry.Size(1600f, 900f)).forEach { surface ->
+                instrumentation.runOnMainSync { vm.updateWorldSize(surface) }
+                assertEquals(paused.dragon, vm.state.value.dragon)
+                assertEquals(paused.souls, vm.state.value.souls)
+                assertEquals(paused.remainingMs, vm.state.value.remainingMs)
+            }
             // Quit must retain the world, and a new game must invalidate it.
             instrumentation.runOnMainSync { vm.quit() }
             assertEquals(fixture, repository.loadGame())

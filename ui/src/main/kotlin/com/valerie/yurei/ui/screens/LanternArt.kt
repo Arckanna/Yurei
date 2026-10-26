@@ -17,14 +17,14 @@ private val silver = Color(0xFFE7EFE8)
 private val lanternGold = Color(0xFFF1CE8D)
 
 /** Layered, resolution-independent ink landscape. All motion uses saved play time. */
-internal fun DrawScope.drawLanternWorld(ui: GameUiState) {
-    val w = size.width
-    val h = size.height
+internal fun DrawScope.drawLanternWorld(ui: GameUiState, worldSize: Size = size) {
+    val w = worldSize.width
+    val h = worldSize.height
     val time = ui.journeyMs / 1000f
     val palettes = listOf(Color(0xFF25344C), Color(0xFF365665), Color(0xFF787C8D))
     val blend = (ui.chapterMs / 6_000f).coerceIn(0f, 1f)
     val sky = lerp(palettes[(ui.chapter - 1).coerceAtLeast(0)], palettes[ui.chapter], blend)
-    drawRect(Brush.verticalGradient(listOf(sky, Color(0xFF152D3D), Color(0xFF102536))))
+    drawRect(Brush.verticalGradient(listOf(sky, Color(0xFF152D3D), Color(0xFF102536)), endY = h), size = worldSize)
     val moon = Offset(w * 0.75f, h * 0.13f)
     drawCircle(Brush.radialGradient(listOf(silver.copy(alpha = 0.13f), Color.Transparent), moon, w * 0.3f), w * 0.3f, moon)
     drawCircle(silver.copy(alpha = 0.65f), w * 0.07f, moon)

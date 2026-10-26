@@ -9,6 +9,7 @@ import com.valerie.yurei.audio.AudioManager
 import com.valerie.yurei.audio.Sfx
 import com.valerie.yurei.core.engine.GameLoop
 import com.valerie.yurei.core.engine.LightBalance
+import com.valerie.yurei.core.world.GameViewport
 import com.valerie.yurei.core.world.LanternJourney
 import com.valerie.yurei.core.world.TimedChallenge
 import com.valerie.yurei.core.world.Soul
@@ -37,7 +38,7 @@ class GameViewModel(
     private var dragon: Dragon? = null
     private var world: World? = null
     private var worldSize: Size = Size.Zero
-    private var viewportSize: Size = Size.Zero
+    private var viewportSize: Size = GameViewport.worldSize
 
     private val _state = MutableStateFlow(GameUiState())
     val state: StateFlow<GameUiState> = _state
@@ -189,17 +190,18 @@ class GameViewModel(
 
     fun updateWorldSize(size: Size) {
         if (!size.isPlayable()) return
-        viewportSize = size
+        val logicalSize = GameViewport.worldSize
+        viewportSize = logicalSize
         val previousSize = worldSize
-        worldSize = size
+        worldSize = logicalSize
         if (world == null) {
             if (_state.value.phase == GamePhase.Running || _state.value.phase == GamePhase.Paused || _state.value.phase == GamePhase.Intro) {
                 resetWorld()
                 if (_state.value.phase == GamePhase.Running) loop.start()
             }
-        } else if (size != previousSize) {
-            dragon?.resize(previousSize, size)
-            world?.updateSize(size)
+        } else if (logicalSize != previousSize) {
+            dragon?.resize(previousSize, logicalSize)
+            world?.updateSize(logicalSize)
             publishWorld()
         }
     }
