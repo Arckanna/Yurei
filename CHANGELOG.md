@@ -9,6 +9,8 @@
 
 ### Objectif porté à 30 âmes
 
+- Contrôles : joystick flottant au point de contact, zone neutre de 14 dp, repère de direction et poignée visuelle. Les petites corrections vers le centre ne retournent plus le dragon ; revenir au centre ou relâcher conserve le cap. Le joystick disparaît à la pause ou à la fin du contact.
+
 - 30 âmes en trois minutes ; transitions visuelles à 10 et 20 collectes.
 - Sauvegarde v4 : les parties en cours conservent leur compteur et les anciens souvenirs restent débloqués.
 

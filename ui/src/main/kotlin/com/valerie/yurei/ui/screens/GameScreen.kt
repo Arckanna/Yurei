@@ -3,7 +3,6 @@ package com.valerie.yurei.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -21,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.valerie.yurei.core.world.LanternJourney
+import com.valerie.yurei.ui.components.SteeringJoystick
 import com.valerie.yurei.ui.components.PauseOverlay
 import com.valerie.yurei.ui.viewmodel.*
 import kotlinx.coroutines.flow.StateFlow
@@ -69,13 +68,13 @@ fun GameScreen(
                 Canvas(Modifier.fillMaxSize()
                     .onSizeChanged { onUpdateWorldSize?.invoke(Size(it.width.toFloat(), it.height.toFloat())) }
                     .semantics { contentDescription = "Dragon en mouvement continu. Glissez pour orienter sa course et évitez sa queue." }
-                    .then(if (ui.phase == GamePhase.Running) Modifier.pointerInput(Unit) {
-                        detectDragGestures { change, drag ->
-                            change.consume()
-                            currentEvent(GameIntent.Drag(drag.x, drag.y))
-                        }
-                    } else Modifier)) {
+                ) {
                     drawLanternWorld(ui)
+                }
+                if (ui.phase == GamePhase.Running) {
+                    SteeringJoystick(Modifier.matchParentSize()) { dx, dy ->
+                        currentEvent(GameIntent.Drag(dx, dy))
+                    }
                 }
                 if (ui.phase == GamePhase.Running && ui.collisionGraceMs > 0) {
                     Text("Queue touchée : −10 s · Protection temporaire", color = Paper, modifier = Modifier
@@ -137,7 +136,7 @@ private fun JourneyIntro(onBegin: () -> Unit) {
             Spacer(Modifier.height(24.dp))
             Text("Au-delà de la brume, une lumière vous attend.", color = Paper, fontSize = 17.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
-            Text("Recueillez 30 âmes avant la fin des trois minutes.\n\nLe dragon avance seul : glissez dans la direction souhaitée pour le guider. Chaque âme allonge son corps.\n\nToucher votre queue coûte 10 secondes et trois segments. Vous êtes ensuite protégé pendant deux secondes. Les berges vous font rebondir sans pénalité.",
+            Text("Recueillez 30 âmes avant la fin des trois minutes.\n\nLe dragon avance seul. Posez le doigt, puis écartez-le du centre du joystick pour choisir une direction. Revenez au centre ou relâchez pour conserver le cap. Chaque âme allonge son corps.\n\nToucher votre queue coûte 10 secondes et trois segments. Vous êtes ensuite protégé pendant deux secondes. Les berges vous font rebondir sans pénalité.",
                 color = Paper.copy(alpha = 0.8f), fontSize = 15.sp, lineHeight = 23.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
             Text("30 ÂMES · 3 MINUTES · ÉVITEZ VOTRE QUEUE", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp)
