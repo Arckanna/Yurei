@@ -24,6 +24,9 @@ class SavedGameTest {
         assertFalse(timed.copy(remainingMs = 0).isValid())
         assertFalse(timed.copy(completed = true).isValid())
         assertTrue(timed.copy(collected = 20, completed = true).isValid())
+        assertFalse(timed.copy(version = 4, collected = 20, completed = true).isValid())
+        val thirty = timed.copy(version = 4, collected = 30, completed = true)
+        assertEquals(thirty, SavedGameCodec.decode(SavedGameCodec.encode(thirty)))
     }
 
     @Test fun unknownFieldsAreAccepted() {
@@ -49,7 +52,7 @@ class SavedGameTest {
     }
 
     @Test fun invalidStatesAndUnsupportedVersionsAreRejected() {
-        listOf(game.copy(width = 0f), game.copy(light = Float.NaN), game.copy(version = 4),
+        listOf(game.copy(width = 0f), game.copy(light = Float.NaN), game.copy(version = 5),
             game.copy(segments = emptyList()), game.copy(idleMs = -1),
             game.copy(souls = game.souls + game.souls)).forEach { assertFalse(it.isValid()) }
         assertThrows(IllegalArgumentException::class.java) { SavedGameCodec.decode("{broken") }

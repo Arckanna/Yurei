@@ -9,12 +9,12 @@ import org.junit.Test
 
 class TimedChallengeTest {
     @Test fun deadlineAndLastSoulHaveUnambiguousOutcome() {
-        val win = TimedChallenge(100, 19)
+        val win = TimedChallenge(100, 29)
         win.tick(50, 1, false)
         assertTrue(win.won)
         win.tick(1000, 0, false)
         assertEquals(50L, win.remainingMs)
-        val lose = TimedChallenge(50, 19)
+        val lose = TimedChallenge(50, 29)
         lose.tick(50, 1, false)
         assertTrue(lose.lost)
         assertFalse(lose.won)

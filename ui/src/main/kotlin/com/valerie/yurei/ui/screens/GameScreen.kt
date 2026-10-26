@@ -61,7 +61,7 @@ fun GameScreen(
                     val seconds = (ui.remainingMs + 999) / 1000
                     Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
                         color = if (seconds <= 30) Color(0xFFFFAB91) else Gold, fontSize = 24.sp)
-                    Text("${ui.collected} / 20 âmes", color = Paper, fontSize = 14.sp)
+                    Text("${ui.collected} / 30 âmes", color = Paper, fontSize = 14.sp)
                 }
             }
             Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -112,7 +112,7 @@ fun GameScreen(
             GamePhase.GameOver -> Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.94f)),
                 verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Le temps s’est écoulé", color = Gold, fontSize = 28.sp)
-                Text("${ui.collected} âmes recueillies sur 20", color = Paper, modifier = Modifier.padding(24.dp))
+                Text("${ui.collected} âmes recueillies sur 30", color = Paper, modifier = Modifier.padding(24.dp))
                 Button(onClick = { onEvent(GameIntent.Start) }) { Text("Réessayer") }
                 TextButton(onClick = { onEvent(GameIntent.Quit) }) { Text("Retour au sanctuaire", color = Paper) }
             }
@@ -137,10 +137,10 @@ private fun JourneyIntro(onBegin: () -> Unit) {
             Spacer(Modifier.height(24.dp))
             Text("Au-delà de la brume, une lumière vous attend.", color = Paper, fontSize = 17.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
-            Text("Recueillez 20 âmes avant la fin des trois minutes.\n\nLe dragon avance seul : glissez dans la direction souhaitée pour le guider. Chaque âme allonge son corps.\n\nToucher votre queue coûte 10 secondes et trois segments. Vous êtes ensuite protégé pendant deux secondes. Les berges vous font rebondir sans pénalité.",
+            Text("Recueillez 30 âmes avant la fin des trois minutes.\n\nLe dragon avance seul : glissez dans la direction souhaitée pour le guider. Chaque âme allonge son corps.\n\nToucher votre queue coûte 10 secondes et trois segments. Vous êtes ensuite protégé pendant deux secondes. Les berges vous font rebondir sans pénalité.",
                 color = Paper.copy(alpha = 0.8f), fontSize = 15.sp, lineHeight = 23.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
-            Text("20 ÂMES · 3 MINUTES · ÉVITEZ VOTRE QUEUE", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp)
+            Text("30 ÂMES · 3 MINUTES · ÉVITEZ VOTRE QUEUE", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp)
             Spacer(Modifier.height(20.dp))
             Button(onClick = onBegin, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) {
                 Text("Entrer dans la brume", modifier = Modifier.padding(8.dp))

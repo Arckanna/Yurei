@@ -19,11 +19,11 @@ class FirstWorldTest {
     @Test fun expiredRunCannotBeContinuedAfterQuitting() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val repository = GameRepository(instrumentation.targetContext)
-        repository.saveGame(SavedGame(version = 3,
+        repository.saveGame(SavedGame(version = 4,
             width = 300f, height = 500f, segments = listOf(SavedPoint(150f, 250f)),
             light = 0.15f, score = 190, souls = emptyList(), fog = emptyList(),
             worldTimeMs = 179900, idleMs = 0, erosionMs = 0,
-            remainingMs = 100, collected = 19, journeyStarted = true))
+            remainingMs = 100, collected = 29, journeyStarted = true))
         repository.loadGame()
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             lateinit var vm: GameViewModel
@@ -72,7 +72,7 @@ class FirstWorldTest {
         }
     }
 
-    @Test fun twentySoulsReachMemoryBeforeDeadline() = runBlocking {
+    @Test fun thirtySoulsReachMemoryBeforeDeadline() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val repository = GameRepository(context)
@@ -109,7 +109,7 @@ class FirstWorldTest {
             }
             val ending = vm.state.value
             assertEquals(GamePhase.Completed, ending.phase)
-            assertEquals(20, ending.collected)
+            assertEquals(30, ending.collected)
             assertTrue(ending.remainingMs > 0)
             assertTrue(ending.memoryUnlocked)
             assertNull(ending.persistenceError)

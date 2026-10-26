@@ -13,7 +13,7 @@ class TimedChallenge(
     var heading: Float = -PI.toFloat() / 2,
     var desiredHeading: Float = heading
 ) {
-    val won get() = collected >= 20 && remainingMs > 0
+    val won get() = collected >= 30 && remainingMs > 0
     val lost get() = remainingMs <= 0
 
     fun steer(dx: Float, dy: Float) {
@@ -47,7 +47,7 @@ class TimedChallenge(
             graceMs = 2_000
         }
         // Expiry wins ties: collecting on an already expired frame cannot rescue a run.
-        if (!lost) collected = (collected + souls).coerceAtMost(20)
+        if (!lost) collected = (collected + souls).coerceAtMost(30)
         return hit
     }
 

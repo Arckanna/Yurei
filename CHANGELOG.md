@@ -7,6 +7,11 @@
 
 ## [Non publié] - 2026-10-26
 
+### Objectif porté à 30 âmes
+
+- 30 âmes en trois minutes ; transitions visuelles à 10 et 20 collectes.
+- Sauvegarde v4 : les parties en cours conservent leur compteur et les anciens souvenirs restent débloqués.
+
 ### Défi chronométré du niveau 1
 
 - 20 âmes à collecter en 180 secondes, avec victoire immédiate à la dernière âme et écran d’échec à expiration.

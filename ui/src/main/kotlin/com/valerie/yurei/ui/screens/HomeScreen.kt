@@ -111,7 +111,7 @@ fun HomeScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("I · LE LAC DES LANTERNES", color = Color.White, fontSize = 17.sp,
                         modifier = Modifier.background(Color(0x880E1B2A), RoundedCornerShape(12.dp)).padding(12.dp))
-                    Text(if (memoryUnlocked) "La lanterne offerte · souvenir retrouvé" else "20 âmes · 3 minutes",
+                    Text(if (memoryUnlocked) "La lanterne offerte · souvenir retrouvé" else "30 âmes · 3 minutes",
                         color = Color.White, fontSize = 13.sp,
                         modifier = Modifier.background(Color(0x880E1B2A), RoundedCornerShape(8.dp)).padding(8.dp))
                 }

@@ -77,10 +77,10 @@ class GameViewModel(
             audioManager.playSfx(Sfx.GameOver)
         }
         journey.elapsedMs += dt
-        val chapterChanged = journey.chapter != (challenge.collected / 7).coerceAtMost(2)
-        journey.chapter = (challenge.collected / 7).coerceAtMost(2)
+        val chapterChanged = journey.chapter != (challenge.collected / 10).coerceAtMost(2)
+        journey.chapter = (challenge.collected / 10).coerceAtMost(2)
         journey.chapterMs = if (chapterChanged) 0 else (journey.chapterMs + dt).coerceAtMost(100_000)
-        journey.offerings = (challenge.collected % 7).coerceAtMost(4)
+        journey.offerings = (challenge.collected % 10).coerceAtMost(4)
         journey.completed = challenge.won
         d.setLight((0.15f + 0.85f * challenge.remainingMs / 180_000f).coerceIn(0.15f, 1f))
         frameCount++
@@ -169,7 +169,7 @@ class GameViewModel(
             chapter = journey.chapter,
             chapterMs = journey.chapterMs,
             offerings = journey.offerings,
-            journeyProgress = challenge.collected / 20f,
+            journeyProgress = challenge.collected / 30f,
             remainingMs = challenge.remainingMs,
             collected = challenge.collected,
             collisionGraceMs = challenge.graceMs,
@@ -321,7 +321,7 @@ class GameViewModel(
         if (d.light <= 0f || challenge.lost || _state.value.phase == GamePhase.GameOver) return
         fun point(p: Offset) = SavedPoint(p.x, p.y)
         save(SavedGame(
-            version = 3, remainingMs = challenge.remainingMs, collected = challenge.collected,
+            version = 4, remainingMs = challenge.remainingMs, collected = challenge.collected,
             graceMs = challenge.graceMs, heading = challenge.heading, desiredHeading = challenge.desiredHeading,
             width = worldSize.width, height = worldSize.height,
             segments = d.getSegments().map { point(it.position) },
@@ -366,7 +366,7 @@ class GameViewModel(
             world?.updateSize(viewportSize)
             worldSize = viewportSize
         }
-        challenge = if (saved.version >= 3) TimedChallenge(saved.remainingMs, saved.collected, saved.graceMs, saved.heading, saved.desiredHeading) else TimedChallenge(collected = if (saved.completed) 20 else 0)
+        challenge = if (saved.version >= 3) TimedChallenge(saved.remainingMs, if (saved.completed) 30 else saved.collected, saved.graceMs, saved.heading, saved.desiredHeading) else TimedChallenge(collected = if (saved.completed) 30 else 0)
         journey = LanternJourney(saved.chapter, saved.chapterMs, saved.offerings, saved.journeyMs, saved.completed)
         journeyStarted = saved.journeyStarted
         balance = LightBalance(saved.idleMs, saved.erosionMs)
