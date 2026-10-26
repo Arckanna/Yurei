@@ -10,6 +10,7 @@ import com.valerie.yurei.audio.Sfx
 import com.valerie.yurei.core.engine.GameLoop
 import com.valerie.yurei.core.engine.LightBalance
 import com.valerie.yurei.core.world.LanternJourney
+import com.valerie.yurei.core.world.TimedChallenge
 import com.valerie.yurei.core.world.Soul
 import com.valerie.yurei.core.world.FogParticle
 import com.valerie.yurei.data.model.*
@@ -41,6 +42,7 @@ class GameViewModel(
     private val _state = MutableStateFlow(GameUiState())
     val state: StateFlow<GameUiState> = _state
 
+    private var challenge = TimedChallenge()
     private var journey = LanternJourney()
     private var journeyStarted = false
     private var balance = LightBalance()
@@ -56,25 +58,31 @@ class GameViewModel(
         val d = dragon ?: return@GameLoop
         val w = world ?: return@GameLoop
 
+        challenge.move(d, worldSize, dt)
         d.update(dt)
         w.update(dt)
-
-        journey.updateLight(d, balance, worldSize, dt)
 
         val collectedSoulIds = w.checkSoulCollisions(d.headPosition, d.getHeadRadius())
         if (collectedSoulIds.isNotEmpty()) {
             collectedSoulIds.forEach { _ ->
-                balance.collect(d)
+                d.addSegment()
             }
             _state.update { it.copy(score = it.score + collectedSoulIds.size * 10) }
             audioManager.playSfx(Sfx.SoulCollect)
         }
 
-        val chapterChanged = journey.update(dt, collectedSoulIds.size)
-        if (chapterChanged && !journey.completed) {
-            d.setLight((d.light + 0.2f).coerceAtMost(1f))
-            audioManager.playSfx(Sfx.SoulCollect)
+        val hit = challenge.tick(dt, collectedSoulIds.size, challenge.touchesTail(d))
+        if (hit) {
+            repeat(3) { d.removeSegment() }
+            audioManager.playSfx(Sfx.GameOver)
         }
+        journey.elapsedMs += dt
+        val chapterChanged = journey.chapter != (challenge.collected / 7).coerceAtMost(2)
+        journey.chapter = (challenge.collected / 7).coerceAtMost(2)
+        journey.chapterMs = if (chapterChanged) 0 else (journey.chapterMs + dt).coerceAtMost(100_000)
+        journey.offerings = (challenge.collected % 7).coerceAtMost(4)
+        journey.completed = challenge.won
+        d.setLight((0.15f + 0.85f * challenge.remainingMs / 180_000f).coerceIn(0.15f, 1f))
         frameCount++
         val now = System.nanoTime() / 1_000_000L
         val fps = if (now - lastFpsUpdate >= 1000) {
@@ -93,10 +101,9 @@ class GameViewModel(
             return@GameLoop
         }
         checkpointMs += dt
-        if (d.light > 0f && (checkpointMs >= 2_000L || collectedSoulIds.isNotEmpty() || chapterChanged)) checkpoint()
-        if (d.light <= 0f && _state.value.phase == GamePhase.Running) {
+        if (d.light > 0f && (checkpointMs >= 2_000L || collectedSoulIds.isNotEmpty() || chapterChanged || hit)) checkpoint()
+        if (challenge.lost && _state.value.phase == GamePhase.Running) {
             stopInternal(gameOver = true)
-            nav.toHome()
         }
     }
 
@@ -162,11 +169,14 @@ class GameViewModel(
             chapter = journey.chapter,
             chapterMs = journey.chapterMs,
             offerings = journey.offerings,
-            journeyProgress = journey.progress(),
+            journeyProgress = challenge.collected / 20f,
+            remainingMs = challenge.remainingMs,
+            collected = challenge.collected,
+            collisionGraceMs = challenge.graceMs,
             journeyMs = journey.elapsedMs,
             refuge = journey.refuge(worldSize),
             refugeRadius = journey.refugeRadius(worldSize),
-            sheltered = journey.isSheltered(d.headPosition, worldSize),
+            sheltered = false,
             dragon = DragonVM(segments, d.getHeadRadius()),
             souls = souls,
             fogParticles = fogParticles,
@@ -238,10 +248,8 @@ class GameViewModel(
             }
             is GameIntent.Drag -> {
                 if (_state.value.phase != GamePhase.Running || !worldSize.isPlayable()) return
-                val d = dragon ?: return
-                val before = d.headPosition
-                d.moveBy(intent.dx, intent.dy, worldSize)
-                balance.moved((d.headPosition - before).getDistance())
+                if (dragon == null) return
+                challenge.steer(intent.dx, intent.dy)
             }
         }
     }
@@ -257,6 +265,7 @@ class GameViewModel(
         val centerY = worldSize.height / 2f
         dragon = Dragon(Offset(centerX, centerY), initialLength = 1, initialLight = LightBalance.INITIAL_LIGHT)
         balance = LightBalance()
+        challenge = TimedChallenge()
         journey = LanternJourney()
         journeyStarted = _state.value.phase == GamePhase.Running
         checkpointMs = 0L
@@ -309,9 +318,11 @@ class GameViewModel(
     private fun checkpoint() {
         val d = dragon ?: return
         val w = world ?: return
-        if (d.light <= 0f) return
+        if (d.light <= 0f || challenge.lost || _state.value.phase == GamePhase.GameOver) return
         fun point(p: Offset) = SavedPoint(p.x, p.y)
         save(SavedGame(
+            version = 3, remainingMs = challenge.remainingMs, collected = challenge.collected,
+            graceMs = challenge.graceMs, heading = challenge.heading, desiredHeading = challenge.desiredHeading,
             width = worldSize.width, height = worldSize.height,
             segments = d.getSegments().map { point(it.position) },
             light = d.light, score = _state.value.score,
@@ -355,6 +366,7 @@ class GameViewModel(
             world?.updateSize(viewportSize)
             worldSize = viewportSize
         }
+        challenge = if (saved.version >= 3) TimedChallenge(saved.remainingMs, saved.collected, saved.graceMs, saved.heading, saved.desiredHeading) else TimedChallenge(collected = if (saved.completed) 20 else 0)
         journey = LanternJourney(saved.chapter, saved.chapterMs, saved.offerings, saved.journeyMs, saved.completed)
         journeyStarted = saved.journeyStarted
         balance = LightBalance(saved.idleMs, saved.erosionMs)

@@ -18,6 +18,14 @@ class SavedGameTest {
         assertEquals(game, SavedGameCodec.decode(SavedGameCodec.encode(game)))
     }
 
+    @Test fun timedSavePreservesDeadlineDirectionAndGrace() {
+        val timed = game.copy(version = 3, remainingMs = 65432, collected = 12, graceMs = 1200, heading = 1.2f, desiredHeading = 2.1f)
+        assertEquals(timed, SavedGameCodec.decode(SavedGameCodec.encode(timed)))
+        assertFalse(timed.copy(remainingMs = 0).isValid())
+        assertFalse(timed.copy(completed = true).isValid())
+        assertTrue(timed.copy(collected = 20, completed = true).isValid())
+    }
+
     @Test fun unknownFieldsAreAccepted() {
         val text = SavedGameCodec.encode(game).replaceFirst("{", "{\"future\":true,")
         assertEquals(game, SavedGameCodec.decode(text))
@@ -41,7 +49,7 @@ class SavedGameTest {
     }
 
     @Test fun invalidStatesAndUnsupportedVersionsAreRejected() {
-        listOf(game.copy(width = 0f), game.copy(light = Float.NaN), game.copy(version = 3),
+        listOf(game.copy(width = 0f), game.copy(light = Float.NaN), game.copy(version = 4),
             game.copy(segments = emptyList()), game.copy(idleMs = -1),
             game.copy(souls = game.souls + game.souls)).forEach { assertFalse(it.isValid()) }
         assertThrows(IllegalArgumentException::class.java) { SavedGameCodec.decode("{broken") }

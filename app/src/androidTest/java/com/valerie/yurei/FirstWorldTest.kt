@@ -16,6 +16,35 @@ import java.io.File
 
 /** Real-time traversal: no test clock, no accelerated production rules. */
 class FirstWorldTest {
+    @Test fun expiredRunCannotBeContinuedAfterQuitting() = runBlocking {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val repository = GameRepository(instrumentation.targetContext)
+        repository.saveGame(SavedGame(version = 3,
+            width = 300f, height = 500f, segments = listOf(SavedPoint(150f, 250f)),
+            light = 0.15f, score = 190, souls = emptyList(), fog = emptyList(),
+            worldTimeMs = 179900, idleMs = 0, erosionMs = 0,
+            remainingMs = 100, collected = 19, journeyStarted = true))
+        repository.loadGame()
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            lateinit var vm: GameViewModel
+            scenario.onActivity { vm = ViewModelProvider(it)[GameViewModel::class.java] }
+            val deadline = SystemClock.elapsedRealtime() + 5000
+            while (!vm.state.value.ready && SystemClock.elapsedRealtime() < deadline) SystemClock.sleep(20)
+            assertTrue(vm.state.value.ready)
+            instrumentation.waitForIdleSync()
+            SystemClock.sleep(800)
+            scenario.onActivity { vm.event(GameIntent.Continue); vm.resume() }
+            val end = SystemClock.elapsedRealtime() + 5000
+            while (vm.state.value.phase == GamePhase.Running && SystemClock.elapsedRealtime() < end) SystemClock.sleep(20)
+            assertEquals(GamePhase.GameOver, vm.state.value.phase)
+            assertEquals(0L, vm.state.value.remainingMs)
+            SystemClock.sleep(500)
+            screenshot("world-timeout.png")
+            scenario.onActivity { vm.quit() }
+            assertNull(repository.loadGame())
+        }
+    }
+
     @Test fun completedSaveReopensMemory() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val repository = GameRepository(instrumentation.targetContext)
@@ -43,7 +72,7 @@ class FirstWorldTest {
         }
     }
 
-    @Test fun entireWorldReachesSavedMemoryInThreeToFiveMinutes() = runBlocking {
+    @Test fun twentySoulsReachMemoryBeforeDeadline() = runBlocking {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val repository = GameRepository(context)
@@ -63,11 +92,11 @@ class FirstWorldTest {
             var captured = false
             while (vm.state.value.phase == GamePhase.Running && SystemClock.elapsedRealtime() - started < 320_000) {
                 val state = vm.state.value
-                if (state.journeyMs - lastMove >= 4_000) {
+                if (state.journeyMs - lastMove >= 100) {
                     scenario.onActivity {
                         val current = vm.state.value
                         val head = current.dragon.segments.firstOrNull()?.position
-                        val soul = current.souls.firstOrNull()?.position
+                        val soul = current.souls.minByOrNull { (it.position - (head ?: it.position)).getDistance() }?.position
                         if (head != null && soul != null) vm.onDrag(soul.x - head.x, soul.y - head.y)
                     }
                     lastMove = state.journeyMs
@@ -80,7 +109,8 @@ class FirstWorldTest {
             }
             val ending = vm.state.value
             assertEquals(GamePhase.Completed, ending.phase)
-            assertTrue(ending.journeyMs in 180_000L..300_100L)
+            assertEquals(20, ending.collected)
+            assertTrue(ending.remainingMs > 0)
             assertTrue(ending.memoryUnlocked)
             assertNull(ending.persistenceError)
             SystemClock.sleep(600)

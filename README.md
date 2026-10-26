@@ -138,3 +138,7 @@ Usage éducatif et démonstratif uniquement.
 > *Yūrei – L’Esprit du Dragon Perdu*  
 > « Même les âmes perdues laissent une trace. »
 
+
+## Niveau 1 chronométré — 26 octobre 2026
+
+Le lac des lanternes demande désormais de collecter 20 âmes en trois minutes. Le dragon avance continuellement ; les glissements orientent sa trajectoire avec un virage progressif. Toucher le corps coûte 10 secondes et trois segments, puis accorde deux secondes de protection. Les berges font rebondir le dragon sans pénalité. La lumière reflète le temps restant. La pause fige le défi ; la sauvegarde v3 conserve le temps, les collectes, la direction et la protection. Les anciennes parties restent lisibles (nouveau chronomètre pour une ancienne partie en cours, souvenir conservé si elle était terminée). Ces règles remplacent le parcours contemplatif décrit plus haut.

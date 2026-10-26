@@ -5,6 +5,17 @@
 
 ---
 
+## [Non publié] - 2026-10-26
+
+### Défi chronométré du niveau 1
+
+- 20 âmes à collecter en 180 secondes, avec victoire immédiate à la dernière âme et écran d’échec à expiration.
+- Avancée continue, direction contrôlée par glissement, virages progressifs et rebonds non punitifs sur les berges.
+- Collision avec la queue : perte de 10 secondes et trois segments, protection de deux secondes et message visible.
+- Compteurs de temps et d’âmes ; lumière liée au temps restant. Pause sans décompte.
+- Sauvegarde v3 du défi, de la direction et de la protection ; compatibilité avec les anciens souvenirs.
+- Validation : 34 tests unitaires core/data réussis, lint debug sans erreur, parcours Android jusqu’aux 20 âmes et au souvenir, restauration de sauvegarde et expiration sans reprise possible. Les tests de cycle de vie passent lors du contrôle ciblé ; une première exécution avait échoué sur une transition d’activité de l’émulateur.
+
 ## [Non publié] - 2026-10-23
 
 ### Premier monde : La lanterne offerte

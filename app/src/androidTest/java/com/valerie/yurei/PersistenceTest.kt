@@ -15,6 +15,7 @@ import org.junit.Test
 
 class PersistenceTest {
     private val fixture = SavedGame(
+        version = 3, remainingMs = 90000, collected = 8, graceMs = 750,
         width = 300f, height = 500f,
         segments = listOf(SavedPoint(150f, 250f), SavedPoint(140f, 240f)),
         light = 0.42f, score = 70,
@@ -68,6 +69,9 @@ class PersistenceTest {
             assertEquals(restored.fogParticles, paused.fogParticles)
             assertEquals(restored.journeyMs, paused.journeyMs)
             assertEquals(GamePhase.Paused, paused.phase)
+            assertEquals(90000L, paused.remainingMs)
+            assertEquals(8, paused.collected)
+            assertEquals(750L, paused.collisionGraceMs)
             assertEquals(1, paused.chapter)
             assertEquals(90000L, paused.journeyMs)
             // Quit must retain the world, and a new game must invalidate it.

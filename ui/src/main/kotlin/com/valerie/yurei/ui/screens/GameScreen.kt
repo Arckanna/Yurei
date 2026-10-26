@@ -57,21 +57,18 @@ fun GameScreen(
                     Text("LE LAC DES LANTERNES", color = Gold, fontSize = 11.sp, letterSpacing = 2.sp)
                     Text(LanternJourney.titles[ui.chapter], color = Paper, fontSize = 18.sp)
                 }
-                Canvas(Modifier.size(68.dp, 24.dp).semantics {
-                    contentDescription = "Étape ${ui.chapter + 1} sur 3, ${ui.offerings} lumières recueillies sur 4"
-                }) {
-                    repeat(3) { i ->
-                        drawCircle(if (i <= ui.chapter) Gold else Paper.copy(alpha = 0.2f),
-                            radius = if (i == ui.chapter) 5.dp.toPx() else 3.dp.toPx(),
-                            center = androidx.compose.ui.geometry.Offset(size.width * (i + 0.5f) / 3, size.height / 2))
-                    }
+                Column(horizontalAlignment = Alignment.End) {
+                    val seconds = (ui.remainingMs + 999) / 1000
+                    Text("${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}",
+                        color = if (seconds <= 30) Color(0xFFFFAB91) else Gold, fontSize = 24.sp)
+                    Text("${ui.collected} / 20 âmes", color = Paper, fontSize = 14.sp)
                 }
             }
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 val currentEvent by rememberUpdatedState(onEvent)
                 Canvas(Modifier.fillMaxSize()
                     .onSizeChanged { onUpdateWorldSize?.invoke(Size(it.width.toFloat(), it.height.toFloat())) }
-                    .semantics { contentDescription = "Dragon spectral. Glissez pour recueillir les lumières. La lanterne est un refuge." }
+                    .semantics { contentDescription = "Dragon en mouvement continu. Glissez pour orienter sa course et évitez sa queue." }
                     .then(if (ui.phase == GamePhase.Running) Modifier.pointerInput(Unit) {
                         detectDragGestures { change, drag ->
                             change.consume()
@@ -80,8 +77,8 @@ fun GameScreen(
                     } else Modifier)) {
                     drawLanternWorld(ui)
                 }
-                if (ui.phase == GamePhase.Running && ui.chapterMs < 6_000 && ui.chapter > 0) {
-                    Text("Un écho se rapproche…", color = Paper, modifier = Modifier
+                if (ui.phase == GamePhase.Running && ui.collisionGraceMs > 0) {
+                    Text("Queue touchée : −10 s · Protection temporaire", color = Paper, modifier = Modifier
                         .align(Alignment.TopCenter).padding(top = 24.dp), fontSize = 16.sp)
                 }
             }
@@ -112,7 +109,14 @@ fun GameScreen(
                 onSettings = { onOpenSettings?.invoke() },
                 onQuit = { onEvent(GameIntent.Quit) }
             )
-            GamePhase.Idle, GamePhase.GameOver -> if (ui.ready) {
+            GamePhase.GameOver -> Column(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.94f)),
+                verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Le temps s’est écoulé", color = Gold, fontSize = 28.sp)
+                Text("${ui.collected} âmes recueillies sur 20", color = Paper, modifier = Modifier.padding(24.dp))
+                Button(onClick = { onEvent(GameIntent.Start) }) { Text("Réessayer") }
+                TextButton(onClick = { onEvent(GameIntent.Quit) }) { Text("Retour au sanctuaire", color = Paper) }
+            }
+            GamePhase.Idle -> if (ui.ready) {
                 Button(onClick = { onEvent(GameIntent.Start) }, modifier = Modifier.align(Alignment.Center)) {
                     Text("Commencer la partie")
                 }
@@ -133,10 +137,10 @@ private fun JourneyIntro(onBegin: () -> Unit) {
             Spacer(Modifier.height(24.dp))
             Text("Au-delà de la brume, une lumière vous attend.", color = Paper, fontSize = 17.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
-            Text("Glissez pour guider le dragon vers les âmes dorées.\n\nRecueillez quatre lumières dans chaque étape. Le lac s’ouvrira à son rythme.\n\nPrès de la grande lanterne, vous pouvez vous reposer : votre lumière se régénère.",
+            Text("Recueillez 20 âmes avant la fin des trois minutes.\n\nLe dragon avance seul : glissez dans la direction souhaitée pour le guider. Chaque âme allonge son corps.\n\nToucher votre queue coûte 10 secondes et trois segments. Vous êtes ensuite protégé pendant deux secondes. Les berges vous font rebondir sans pénalité.",
                 color = Paper.copy(alpha = 0.8f), fontSize = 15.sp, lineHeight = 23.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
-            Text("3–5 MINUTES · À VOTRE RYTHME", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp)
+            Text("20 ÂMES · 3 MINUTES · ÉVITEZ VOTRE QUEUE", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp)
             Spacer(Modifier.height(20.dp))
             Button(onClick = onBegin, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) {
                 Text("Entrer dans la brume", modifier = Modifier.padding(8.dp))

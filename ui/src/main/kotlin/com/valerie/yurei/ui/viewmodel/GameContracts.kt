@@ -27,6 +27,9 @@ data class FogParticleVM(
 )
 
 data class GameUiState(
+    val remainingMs: Long = 180_000,
+    val collected: Int = 0,
+    val collisionGraceMs: Long = 0,
     val chapter: Int = 0,
     val chapterMs: Long = 0,
     val offerings: Int = 0,
