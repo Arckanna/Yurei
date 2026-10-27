@@ -142,3 +142,9 @@ Usage éducatif et démonstratif uniquement.
 ## Niveau 1 chronométré — 26 octobre 2026
 
 Le lac des lanternes demande désormais de collecter 30 âmes en trois minutes. Le dragon avance continuellement ; les glissements orientent sa trajectoire avec un virage progressif. Toucher le corps coûte 10 secondes et trois segments, puis accorde deux secondes de protection. Les berges font rebondir le dragon sans pénalité. La lumière reflète le temps restant. La pause fige le défi ; la sauvegarde v4 conserve le temps, les collectes, la direction et la protection. Les anciennes parties restent lisibles (nouveau chronomètre pour une ancienne partie en cours, souvenir conservé si elle était terminée). Ces règles remplacent le parcours contemplatif décrit plus haut.
+
+## Niveau 2 — Le jardin des promesses
+
+Après le souvenir du lac, le jardin des sakuras se débloque : cerisiers en fleurs, pétales animés et musique originale. Collectez 30 âmes en trois minutes en évitant la queue et trois pierres bordées de rose. Chaque contact coûte dix secondes et trois segments, puis accorde deux secondes de protection ; les arbres et pétales sont décoratifs. La victoire révèle « La promesse du printemps ». Le niveau en cours est conservé dans la sauvegarde v5, avec compatibilité des anciennes parties. Les deux souvenirs restent débloqués séparément.
+
+Les nouvelles pistes sont reproductibles avec `python tools/generate_sakura_audio.py`.

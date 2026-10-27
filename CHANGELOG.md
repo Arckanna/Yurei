@@ -5,6 +5,17 @@
 
 ---
 
+## [Non publié] - 2026-10-27
+
+### Niveau 2 — Le jardin des promesses
+
+- Suite débloquée après le souvenir du lac, accessible depuis sa conclusion et depuis l’accueil. Rejouer ou réessayer conserve le niveau choisi.
+- Jardin au crépuscule, cerisiers roses, chemin sinueux et pétales animés. Trois étapes narratives et souvenir illustré « La promesse du printemps ».
+- 30 âmes en trois minutes ; trois pierres visibles ajoutent un danger de décor. Leur contact coûte dix secondes et trois segments, avec deux secondes de protection partagées avec les collisions de queue. Les âmes apparaissent à distance des pierres.
+- Deux pistes originales synthétisées pour le jardin et sa conclusion, reproductibles avec `tools/generate_sakura_audio.py`.
+- Sauvegarde v5 du niveau actif ; souvenir du jardin conservé séparément. Compatibilité avec les sauvegardes précédentes du lac.
+- Validation : 44 tests unitaires core/data réussis ; six contrôles Android réussis couvrant déblocage, pierres, souvenir, parcours complet jusqu’aux 30 âmes, cycle de vie et persistance. Introduction, jeu et conclusion contrôlés visuellement sur émulateur. Builds debug/release et lint réussis ; neuf ressources audio conservées dans l’APK release (9,55 Mo).
+
 ## [Non publié] - 2026-10-26
 
 ### Objectif porté à 30 âmes

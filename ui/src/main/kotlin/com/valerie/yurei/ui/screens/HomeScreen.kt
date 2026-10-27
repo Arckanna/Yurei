@@ -30,6 +30,8 @@ fun HomeScreen(
     onStartGame: () -> Unit,
     highScore: Int = 0,
     memoryUnlocked: Boolean = false,
+    sakuraMemoryUnlocked: Boolean = false,
+    onSakura: () -> Unit = {},
     ready: Boolean = true,
     hasSavedGame: Boolean = false,
     onContinue: () -> Unit = {},
@@ -125,6 +127,12 @@ fun HomeScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (memoryUnlocked) {
+                    Button(onClick = onSakura, enabled = ready, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE5B0C9), contentColor = Color(0xFF302338))) {
+                        Text(if (sakuraMemoryUnlocked) "Rejouer le jardin des sakuras" else "II · Le jardin des sakuras")
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
                 if (hasSavedGame) {
                     Button(onClick = onContinue, enabled = ready) { Text("Continuer la partie") }
                     Spacer(Modifier.height(8.dp))

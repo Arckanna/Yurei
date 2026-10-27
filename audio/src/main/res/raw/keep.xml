@@ -1,3 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@raw/ambient,@raw/memory,@raw/soul_collect,@raw/pause,@raw/resume,@raw/game_over,@raw/button_tap" />
+    tools:keep="@raw/ambient,@raw/memory,@raw/sakura,@raw/sakura_memory,@raw/soul_collect,@raw/pause,@raw/resume,@raw/game_over,@raw/button_tap" />

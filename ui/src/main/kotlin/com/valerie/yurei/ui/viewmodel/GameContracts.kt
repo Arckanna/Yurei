@@ -27,6 +27,9 @@ data class FogParticleVM(
 )
 
 data class GameUiState(
+    val level: Int = 1,
+    val sakuraMemoryUnlocked: Boolean = false,
+    val hitScenery: Boolean = false,
     val remainingMs: Long = 180_000,
     val collected: Int = 0,
     val collisionGraceMs: Long = 0,
@@ -57,6 +60,7 @@ sealed class GameIntent {
     data object Continue : GameIntent()
     data object Begin : GameIntent()
     data object Start : GameIntent()
+    data class StartLevel(val level: Int) : GameIntent()
     data object Pause : GameIntent()
     data object Resume : GameIntent()
     data object Quit : GameIntent()

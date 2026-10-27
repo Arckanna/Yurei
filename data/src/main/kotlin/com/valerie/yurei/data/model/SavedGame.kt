@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 @Serializable data class SavedFog(val position: SavedPoint, val size: Float, val opacity: Float, val speed: Float, val direction: Float)
 @Serializable data class SavedGame(
     val version: Int = 2,
+    val level: Int = 1,
     val remainingMs: Long = 180_000,
     val collected: Int = 0,
     val graceMs: Long = 0,
@@ -33,7 +34,7 @@ import kotlinx.serialization.json.Json
     fun isValid(): Boolean {
         fun point(p: SavedPoint) = p.x.isFinite() && p.y.isFinite() && p.x in 0f..width && p.y in 0f..height
         val target = if (version >= 4) 30 else 20
-        return version in 1..4 && remainingMs in 1..180_000 && collected in 0..target && graceMs in 0..2000 && heading.isFinite() && desiredHeading.isFinite() && (version < 3 || completed == (collected == target)) && chapter in 0..2 && chapterMs in 0..100_000L &&
+        return version in 1..5 && level in 1..2 && (version >= 5 || level == 1) && remainingMs in 1..180_000 && collected in 0..target && graceMs in 0..2000 && heading.isFinite() && desiredHeading.isFinite() && (version < 3 || completed == (collected == target)) && chapter in 0..2 && chapterMs in 0..100_000L &&
             offerings in 0..4 && journeyMs >= 0 &&
             (!completed || version >= 3 && collected == target && journeyStarted || version < 3 && chapter == 2 && (chapterMs >= 60_000L && offerings >= 4 || chapterMs >= 100_000L && offerings >= 1) && journeyMs >= 180_000L && journeyStarted) && width.isFinite() && height.isFinite() && width > 0 && height > 0 &&
             segments.isNotEmpty() && segments.all(::point) && light.isFinite() && light > 0f && light <= 1f &&

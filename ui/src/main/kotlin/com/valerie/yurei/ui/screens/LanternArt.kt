@@ -21,6 +21,10 @@ internal fun DrawScope.drawLanternWorld(ui: GameUiState, worldSize: Size = size)
     val w = worldSize.width
     val h = worldSize.height
     val time = ui.journeyMs / 1000f
+    val lanternGold = if (ui.level == 2) Color(0xFFFFD6E5) else Color(0xFFF1CE8D)
+    if (ui.level == 2) {
+        drawSakuraBackground(worldSize, time, ui.chapter)
+    } else {
     val palettes = listOf(Color(0xFF25344C), Color(0xFF365665), Color(0xFF787C8D))
     val blend = (ui.chapterMs / 6_000f).coerceIn(0f, 1f)
     val sky = lerp(palettes[(ui.chapter - 1).coerceAtLeast(0)], palettes[ui.chapter], blend)
@@ -55,12 +59,13 @@ internal fun DrawScope.drawLanternWorld(ui: GameUiState, worldSize: Size = size)
     for (sign in listOf(-1, 1)) drawLine(ink, Offset(gateX + sign * gateWidth * 0.34f, gateY - h * 0.02f),
         Offset(gateX + sign * gateWidth * 0.4f, gateY + h * 0.09f), w * 0.014f)
 
+    }
     ui.fogParticles.forEach { fog ->
         val radius = fog.size * 2f
         drawCircle(Brush.radialGradient(listOf(silver.copy(alpha = fog.opacity * (0.23f - ui.chapter * 0.04f)), Color.Transparent),
             fog.position, radius), radius, fog.position)
     }
-    if (ui.refugeRadius > 0) {
+    if (ui.level == 1 && ui.refugeRadius > 0) {
         val p = ui.refuge
         val pulse = 1f + 0.04f * sin(time)
         drawCircle(Brush.radialGradient(listOf(lanternGold.copy(alpha = if (ui.sheltered) 0.24f else 0.12f), Color.Transparent),

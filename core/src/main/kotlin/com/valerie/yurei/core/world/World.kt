@@ -53,7 +53,8 @@ data class FogParticle(
  */
 class World(
     worldSize: Size,
-    initialSoulCount: Int = 5
+    initialSoulCount: Int = 5,
+    private val level: Int = 1
 ) {
     private var size: Size = worldSize
     private val souls = mutableListOf<Soul>()
@@ -106,7 +107,15 @@ class World(
             val y = centerY + kotlin.math.sin(angle) * distance
 
             // S'assurer que l'âme est dans les limites
-            val position = Offset(x, y).confinedTo(size, 30f)
+            var position = Offset(x, y).confinedTo(size, 30f)
+            if (level == 2 && !SakuraGarden.isSafeForSoul(position, size)) {
+                // A bounded search avoids spawning collectibles inside the new scenery.
+                position = (0 until 32).asSequence().map { step ->
+                    val a = angle + step * 0.37f
+                    Offset(centerX + kotlin.math.cos(a) * size.minDimension * 0.30f,
+                        centerY + kotlin.math.sin(a) * size.minDimension * 0.30f).confinedTo(size, 30f)
+                }.firstOrNull { SakuraGarden.isSafeForSoul(it, size) } ?: Offset(centerX, centerY)
+            }
 
             souls.add(
                 Soul(

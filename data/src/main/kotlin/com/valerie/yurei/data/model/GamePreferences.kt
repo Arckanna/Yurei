@@ -6,6 +6,7 @@ package com.valerie.yurei.data.model
 data class GamePreferences(
     val highScore: Int = 0,
     val memoryUnlocked: Boolean = false,
+    val sakuraMemoryUnlocked: Boolean = false,
     val musicEnabled: Boolean = true,
     val sfxEnabled: Boolean = true
 )

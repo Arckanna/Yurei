@@ -104,7 +104,9 @@ fun YureiApp() {
             composable(Route.Home.path) {
                 val uiState by viewModel.state.collectAsState()
                 HomeScreen(
-                    onStartGame = { viewModel.start() },
+                    onStartGame = { viewModel.event(GameIntent.StartLevel(1)) },
+                    onSakura = { viewModel.event(GameIntent.StartLevel(2)) },
+                    sakuraMemoryUnlocked = uiState.sakuraMemoryUnlocked,
                     highScore = uiState.highScore,
                     ready = uiState.ready,
                     memoryUnlocked = uiState.memoryUnlocked,

@@ -44,7 +44,10 @@ class GameRepository(context: Context) {
                 val encoded = game?.let(SavedGameCodec::encode)
                 context.dataStore.edit { prefs ->
                     if (encoded == null) prefs.remove(Keys.GAME) else prefs[Keys.GAME] = encoded
-                    if (game?.completed == true) prefs[Keys.MEMORY] = true
+                    if (game?.completed == true) {
+                        prefs[Keys.MEMORY] = true
+                        if (game.level == 2) prefs[Keys.SAKURA_MEMORY] = true
+                    }
                     if (game != null && game.score > (prefs[Keys.HIGH_SCORE] ?: 0)) prefs[Keys.HIGH_SCORE] = game.score
                 }
             }
@@ -54,6 +57,7 @@ class GameRepository(context: Context) {
 
 
     private object Keys {
+        val SAKURA_MEMORY = booleanPreferencesKey("sakura_memory_unlocked")
         val MEMORY = booleanPreferencesKey("lantern_memory_unlocked")
         val GAME = stringPreferencesKey("saved_game_v1")
         val HIGH_SCORE = intPreferencesKey("high_score")
@@ -65,6 +69,7 @@ class GameRepository(context: Context) {
         GamePreferences(
             highScore = prefs[Keys.HIGH_SCORE] ?: 0,
             memoryUnlocked = prefs[Keys.MEMORY] ?: false,
+            sakuraMemoryUnlocked = prefs[Keys.SAKURA_MEMORY] ?: false,
             musicEnabled = prefs[Keys.MUSIC_ENABLED] ?: true,
             sfxEnabled = prefs[Keys.SFX_ENABLED] ?: true
         )

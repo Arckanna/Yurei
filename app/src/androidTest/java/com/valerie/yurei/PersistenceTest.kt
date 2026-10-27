@@ -15,7 +15,7 @@ import org.junit.Test
 
 class PersistenceTest {
     private val fixture = SavedGame(
-        version = 4, remainingMs = 90000, collected = 8, graceMs = 750,
+        version = 5, remainingMs = 90000, collected = 8, graceMs = 750,
         width = 1080f, height = 1920f,
         segments = listOf(SavedPoint(150f, 250f), SavedPoint(140f, 240f)),
         light = 0.42f, score = 70,

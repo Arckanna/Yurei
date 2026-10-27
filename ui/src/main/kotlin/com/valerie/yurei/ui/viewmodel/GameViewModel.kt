@@ -12,6 +12,7 @@ import com.valerie.yurei.core.engine.LightBalance
 import com.valerie.yurei.core.world.GameViewport
 import com.valerie.yurei.core.world.LanternJourney
 import com.valerie.yurei.core.world.TimedChallenge
+import com.valerie.yurei.core.world.SakuraGarden
 import com.valerie.yurei.core.world.Soul
 import com.valerie.yurei.core.world.FogParticle
 import com.valerie.yurei.data.model.*
@@ -43,6 +44,7 @@ class GameViewModel(
     private val _state = MutableStateFlow(GameUiState())
     val state: StateFlow<GameUiState> = _state
 
+    private var level = 1
     private var challenge = TimedChallenge()
     private var journey = LanternJourney()
     private var journeyStarted = false
@@ -79,8 +81,10 @@ class GameViewModel(
             audioManager.playSfx(Sfx.SoulCollect)
         }
 
-        val hit = challenge.tick(activeMs, collectedSoulIds.size, challenge.touchesTail(d))
+        val stoneHit = level == 2 && SakuraGarden.touchesStone(d.headPosition, d.getHeadRadius(), worldSize)
+        val hit = challenge.tick(activeMs, collectedSoulIds.size, challenge.touchesTail(d) || stoneHit)
         if (hit) {
+            _state.update { it.copy(hitScenery = stoneHit) }
             repeat(3) { d.removeSegment() }
             audioManager.playSfx(Sfx.GameOver)
         }
@@ -134,6 +138,7 @@ class GameViewModel(
                         it.copy(
                             highScore = prefs.highScore,
                             memoryUnlocked = prefs.memoryUnlocked || it.memoryUnlocked,
+                            sakuraMemoryUnlocked = prefs.sakuraMemoryUnlocked || it.sakuraMemoryUnlocked,
                             musicEnabled = prefs.musicEnabled,
                             sfxEnabled = prefs.sfxEnabled
                         )
@@ -146,9 +151,9 @@ class GameViewModel(
 
     private fun finishJourney() {
         loop.stop()
-        _state.update { it.copy(phase = GamePhase.Completed, memoryUnlocked = true) }
+        _state.update { it.copy(phase = GamePhase.Completed, memoryUnlocked = true, sakuraMemoryUnlocked = it.sakuraMemoryUnlocked || level == 2) }
         checkpoint()
-        audioManager.prepareMusic("memory", loop = false)
+        audioManager.prepareMusic(if (level == 2) "sakura_memory" else "memory", loop = false)
         audioManager.startMusic()
     }
 
@@ -174,6 +179,7 @@ class GameViewModel(
         }
 
         _state.update { it.copy(
+            level = level,
             chapter = journey.chapter,
             chapterMs = journey.chapterMs,
             offerings = journey.offerings,
@@ -229,18 +235,8 @@ class GameViewModel(
                 nav.toGame()
                 if (saved.completed) audioManager.startMusic()
             }
-            is GameIntent.Start -> {
-                if (_state.value.phase != GamePhase.Running) {
-                    save(null)
-                    loop.stop()
-                    dragon = null
-                    world = null
-                    _state.update { it.copy(score = 0, dragon = DragonVM(), souls = emptyList(), fogParticles = emptyList()) }
-                    if (worldSize.isPlayable()) resetWorld()
-                    _state.update { it.copy(phase = GamePhase.Intro) }
-                    nav.toGame()
-                }
-            }
+            is GameIntent.Start -> startLevel(level)
+            is GameIntent.StartLevel -> startLevel(intent.level)
             is GameIntent.Pause -> {
                 if (_state.value.phase == GamePhase.Running) pauseInternal()
                 else {
@@ -263,6 +259,21 @@ class GameViewModel(
         }
     }
 
+    private fun startLevel(requested: Int) {
+        if (requested !in 1..2 || _state.value.phase == GamePhase.Running) return
+        if (requested == 2 && !_state.value.memoryUnlocked) return
+        save(null)
+        loop.stop()
+        audioManager.pauseMusic()
+        level = requested
+        dragon = null
+        world = null
+        _state.update { it.copy(level = level, phase = GamePhase.Intro, score = 0, hitScenery = false,
+            dragon = DragonVM(), souls = emptyList(), fogParticles = emptyList()) }
+        if (worldSize.isPlayable()) resetWorld()
+        nav.toGame()
+    }
+
     fun onDrag(dx: Float, dy: Float) = event(GameIntent.Drag(dx, dy))
     fun start() = event(GameIntent.Start)
     fun pause() = event(GameIntent.Pause)
@@ -278,7 +289,7 @@ class GameViewModel(
         journey = LanternJourney()
         journeyStarted = _state.value.phase == GamePhase.Running
         checkpointMs = 0L
-        world = World(worldSize, initialSoulCount = 5)
+        world = World(worldSize, initialSoulCount = 5, level = level)
         frameCount = 0
         lastFpsUpdate = System.nanoTime() / 1_000_000L
         _state.update { it.copy(score = 0) }
@@ -289,7 +300,7 @@ class GameViewModel(
     private fun startInternal() {
         _state.update { it.copy(phase = GamePhase.Running) }
         if (world != null) loop.start()
-        audioManager.prepareMusic("ambient")
+        audioManager.prepareMusic(if (level == 2) "sakura" else "ambient")
         audioManager.startMusic()
     }
 
@@ -342,7 +353,7 @@ class GameViewModel(
         if (d.light <= 0f || challenge.lost || _state.value.phase == GamePhase.GameOver) return
         fun point(p: Offset) = SavedPoint(p.x, p.y)
         save(SavedGame(
-            version = 4, remainingMs = challenge.remainingMs, collected = challenge.collected,
+            version = 5, level = level, remainingMs = challenge.remainingMs, collected = challenge.collected,
             graceMs = challenge.graceMs, heading = challenge.heading, desiredHeading = challenge.desiredHeading,
             width = worldSize.width, height = worldSize.height,
             segments = d.getSegments().map { point(it.position) },
@@ -372,10 +383,11 @@ class GameViewModel(
 
     private fun restoreGame(saved: SavedGame) {
         loop.stop()
+        level = saved.level
         worldSize = Size(saved.width, saved.height)
         fun offset(p: SavedPoint) = Offset(p.x, p.y)
         dragon = Dragon().apply { restore(saved.segments.map(::offset), saved.light) }
-        world = World(worldSize, initialSoulCount = 0).apply {
+        world = World(worldSize, initialSoulCount = 0, level = level).apply {
             restore(
                 saved.souls.map { Soul(it.id, offset(it.position), it.radius, it.light, it.pulse) },
                 saved.fog.map { FogParticle(offset(it.position), it.size, it.opacity, it.speed, it.direction) },
@@ -396,8 +408,9 @@ class GameViewModel(
             saved.completed -> GamePhase.Completed
             !saved.journeyStarted -> GamePhase.Intro
             else -> GamePhase.Paused
-        }, score = saved.score, memoryUnlocked = it.memoryUnlocked || saved.completed) }
-        audioManager.prepareMusic(if (saved.completed) "memory" else "ambient", loop = !saved.completed)
+        }, score = saved.score, memoryUnlocked = it.memoryUnlocked || saved.completed || level == 2,
+            sakuraMemoryUnlocked = it.sakuraMemoryUnlocked || (saved.completed && level == 2)) }
+        audioManager.prepareMusic(if (level == 2) { if (saved.completed) "sakura_memory" else "sakura" } else { if (saved.completed) "memory" else "ambient" }, loop = !saved.completed)
         publishWorld(0)
     }
 

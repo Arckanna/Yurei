@@ -29,6 +29,14 @@ class SavedGameTest {
         assertEquals(thirty, SavedGameCodec.decode(SavedGameCodec.encode(thirty)))
     }
 
+    @Test fun sakuraSaveRetainsItsLevelAndRejectsUnknownWorlds() {
+        val sakura = game.copy(version = 5, level = 2, collected = 18)
+        assertEquals(sakura, SavedGameCodec.decode(SavedGameCodec.encode(sakura)))
+        assertFalse(sakura.copy(level = 3).isValid())
+        assertFalse(sakura.copy(version = 4).isValid())
+        assertEquals(1, SavedGameCodec.decode(SavedGameCodec.encode(game)).level)
+    }
+
     @Test fun unknownFieldsAreAccepted() {
         val text = SavedGameCodec.encode(game).replaceFirst("{", "{\"future\":true,")
         assertEquals(game, SavedGameCodec.decode(text))
@@ -52,7 +60,7 @@ class SavedGameTest {
     }
 
     @Test fun invalidStatesAndUnsupportedVersionsAreRejected() {
-        listOf(game.copy(width = 0f), game.copy(light = Float.NaN), game.copy(version = 5),
+        listOf(game.copy(width = 0f), game.copy(light = Float.NaN), game.copy(version = 6),
             game.copy(segments = emptyList()), game.copy(idleMs = -1),
             game.copy(souls = game.souls + game.souls)).forEach { assertFalse(it.isValid()) }
         assertThrows(IllegalArgumentException::class.java) { SavedGameCodec.decode("{broken") }
