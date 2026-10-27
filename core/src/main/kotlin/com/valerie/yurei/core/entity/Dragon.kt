@@ -28,6 +28,10 @@ class Dragon(
     companion object {
         // Logical world units: collection reach must not depend on the remaining light.
         const val HEAD_RADIUS = 48f
+        // Visible head ellipse, shared by drawing and physical collisions.
+        // The glow, horns and whiskers are decorative; collection keeps its generous reach.
+        const val HEAD_HALF_WIDTH = 28.8f
+        const val HEAD_HALF_HEIGHT = HEAD_HALF_WIDTH * 0.65f
     }
     // Position de la tête (premier segment)
     var headPosition: Offset = initialPosition

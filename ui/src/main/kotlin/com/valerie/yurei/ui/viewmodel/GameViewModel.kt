@@ -81,7 +81,7 @@ class GameViewModel(
             audioManager.playSfx(Sfx.SoulCollect)
         }
 
-        val stoneHit = level == 2 && SakuraGarden.touchesStone(d.headPosition, d.getHeadRadius(), worldSize)
+        val stoneHit = level == 2 && SakuraGarden.touchesStone(d.headPosition, worldSize)
         val hit = challenge.tick(activeMs, collectedSoulIds.size, challenge.touchesTail(d) || stoneHit)
         if (hit) {
             _state.update { it.copy(hitScenery = stoneHit) }

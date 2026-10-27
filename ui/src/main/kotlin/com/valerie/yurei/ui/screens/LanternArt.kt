@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import com.valerie.yurei.ui.viewmodel.GameUiState
+import com.valerie.yurei.core.entity.Dragon
 import kotlin.math.sin
 import kotlin.math.cos
 
@@ -102,9 +103,9 @@ internal fun DrawScope.drawLanternWorld(ui: GameUiState, worldSize: Size = size)
             drawCircle(silver.copy(alpha = light * 0.3f), (9f - i * 0.2f).coerceAtLeast(3f), segment.position)
         }
         val head = segments.first().position
-        val r = ui.dragon.headRadius * 0.6f
+        val r = Dragon.HEAD_HALF_WIDTH
         drawCircle(Brush.radialGradient(listOf(silver.copy(alpha = 0.18f), Color.Transparent), head, r * 3f), r * 3f, head)
-        drawOval(silver.copy(alpha = light), head - Offset(r, r * 0.65f), Size(r * 2f, r * 1.3f))
+        drawOval(silver.copy(alpha = light), head - Offset(r, Dragon.HEAD_HALF_HEIGHT), Size(r * 2f, Dragon.HEAD_HALF_HEIGHT * 2f))
         for (sign in listOf(-1f, 1f)) {
             val horn = Path().apply {
                 moveTo(head.x - r * 0.4f, head.y + sign * r * 0.4f)
