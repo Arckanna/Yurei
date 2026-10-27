@@ -8,6 +8,48 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class TimedChallengeTest {
+    @Test fun groupedGrowthIsSafeUntilDeployedThenDetectsRealContact() {
+        val dragon = Dragon(Offset(100f, 100f))
+        val run = TimedChallenge()
+        repeat(8) { dragon.addSegment() }
+        assertFalse(run.touchesTail(dragon))
+        repeat(10) { dragon.update(16) }
+        assertFalse(run.touchesTail(dragon))
+        // Deploy naturally while moving straight ahead.
+        repeat(250) {
+            dragon.updateHeadPosition(dragon.headPosition + Offset(4f, 0f))
+            dragon.update(16)
+            assertFalse(run.touchesTail(dragon))
+        }
+        assertTrue(dragon.getSegments().drop(1).all { it.deployed })
+        dragon.addSegment()
+        assertFalse(dragon.getSegments().last().deployed)
+        dragon.updateHeadPosition(dragon.getSegments()[6].position)
+        assertTrue(run.touchesTail(dragon))
+        val restored = Dragon().apply {
+            restore(dragon.getSegments().map { it.position }, dragon.light,
+                dragon.getSegments().map { it.deployed })
+        }
+        assertTrue(run.touchesTail(restored))
+        assertFalse(restored.getSegments().last().deployed)
+    }
+
+    @Test fun restoringUndeployedGrowthDoesNotCreateACollision() {
+        val positions = List(9) { Offset(100f, 100f) }
+        val dragon = Dragon()
+        dragon.restore(positions, 1f)
+        assertFalse(TimedChallenge().touchesTail(dragon))
+        dragon.restore(positions, 1f, List(9) { false })
+        assertFalse(TimedChallenge().touchesTail(dragon))
+        // An already deployed body remains dangerous even when compressed.
+        dragon.restore(positions, 1f, List(9) { true })
+        dragon.update(16)
+        assertTrue(TimedChallenge().touchesTail(dragon))
+        dragon.reset()
+        repeat(8) { dragon.addSegment() }
+        assertFalse(TimedChallenge().touchesTail(dragon))
+    }
+
     @Test fun deadlineAndLastSoulHaveUnambiguousOutcome() {
         val win = TimedChallenge(100, 29)
         win.tick(50, 1, false)

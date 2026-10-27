@@ -353,10 +353,11 @@ class GameViewModel(
         if (d.light <= 0f || challenge.lost || _state.value.phase == GamePhase.GameOver) return
         fun point(p: Offset) = SavedPoint(p.x, p.y)
         save(SavedGame(
-            version = 5, level = level, remainingMs = challenge.remainingMs, collected = challenge.collected,
+            version = 6, level = level, remainingMs = challenge.remainingMs, collected = challenge.collected,
             graceMs = challenge.graceMs, heading = challenge.heading, desiredHeading = challenge.desiredHeading,
             width = worldSize.width, height = worldSize.height,
             segments = d.getSegments().map { point(it.position) },
+            deployedSegments = d.getSegments().map { it.deployed },
             light = d.light, score = _state.value.score,
             souls = w.getSouls().map { SavedSoul(it.id, point(it.position), it.radius, it.lightIntensity, it.pulsePhase) },
             fog = w.getFogParticles().map { SavedFog(point(it.position), it.size, it.opacity, it.speed, it.direction) },
@@ -386,7 +387,7 @@ class GameViewModel(
         level = saved.level
         worldSize = Size(saved.width, saved.height)
         fun offset(p: SavedPoint) = Offset(p.x, p.y)
-        dragon = Dragon().apply { restore(saved.segments.map(::offset), saved.light) }
+        dragon = Dragon().apply { restore(saved.segments.map(::offset), saved.light, saved.deployedSegments) }
         world = World(worldSize, initialSoulCount = 0, level = level).apply {
             restore(
                 saved.souls.map { Soul(it.id, offset(it.position), it.radius, it.light, it.pulse) },

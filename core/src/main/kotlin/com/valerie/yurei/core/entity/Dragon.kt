@@ -13,7 +13,8 @@ import com.valerie.yurei.core.world.rescaled
  */
 data class DragonSegment(
     val position: Offset,
-    val light: Float = 0.5f // Intensité lumineuse du segment (0f à 1f)
+    val light: Float = 0.5f, // Intensité lumineuse du segment (0f à 1f)
+    val deployed: Boolean = false // Link to the preceding segment has unfolded.
 )
 
 /**
@@ -87,7 +88,7 @@ class Dragon(
     fun addSegment() {
         length++
         val lastSegment = segments.lastOrNull() ?: DragonSegment(headPosition, light)
-        segments.add(lastSegment.copy())
+        segments.add(lastSegment.copy(deployed = false))
     }
 
     /**
@@ -131,11 +132,19 @@ class Dragon(
                 val newY = current.y + kotlin.math.sin(angle) * moveDistance
 
                 val segmentLight = light * (1f - i * 0.1f).coerceIn(0.3f, 1f)
-                segments[i] = DragonSegment(Offset(newX, newY), segmentLight)
+                segments[i] = segments[i].copy(position = Offset(newX, newY), light = segmentLight)
             } else {
                 // Le segment est assez proche, juste mettre à jour la lumière
                 val segmentLight = light * (1f - i * 0.1f).coerceIn(0.3f, 1f)
                 segments[i] = segments[i].copy(light = segmentLight)
+            }
+        }
+
+        // Deployment is permanent: compressing an established link must not disable it.
+        for (i in 1 until segments.size) {
+            if (!segments[i].deployed &&
+                (segments[i].position - segments[i - 1].position).getDistance() >= segmentSpacing) {
+                segments[i] = segments[i].copy(deployed = true)
             }
         }
 
@@ -145,7 +154,7 @@ class Dragon(
         }
         while (segments.size < length) {
             val lastSegment = segments.lastOrNull() ?: DragonSegment(headPosition, light)
-            segments.add(lastSegment.copy())
+            segments.add(lastSegment.copy(deployed = false))
         }
     }
 
@@ -154,10 +163,16 @@ class Dragon(
      */
     fun getSegments(): List<DragonSegment> = segments.toList()
 
-    fun restore(positions: List<Offset>, restoredLight: Float) {
+    fun restore(positions: List<Offset>, restoredLight: Float, deployed: List<Boolean>? = null) {
         require(positions.isNotEmpty())
+        require(deployed == null || deployed.size == positions.size)
         segments.clear()
-        positions.forEach { segments.add(DragonSegment(it, restoredLight)) }
+        positions.forEachIndexed { i, position ->
+            // Older saves infer deployment from their geometry.
+            val ready = deployed?.get(i) ?: (i > 0 &&
+                (position - positions[i - 1]).getDistance() >= segmentSpacing)
+            segments.add(DragonSegment(position, restoredLight, ready))
+        }
         length = positions.size
         headPosition = positions.first()
         setLight(restoredLight)

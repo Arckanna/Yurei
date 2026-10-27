@@ -52,9 +52,11 @@ class TimedChallenge(
     }
 
     fun touchesTail(dragon: Dragon): Boolean {
-        val points = dragon.getSegments().map { it.position }
+        val segments = dragon.getSegments()
+        val points = segments.map { it.position }
         val head = dragon.headPosition
         return (5 until points.lastIndex).any { i ->
+            if (!segments[i + 1].deployed) return@any false
             val a = points[i]; val ab = points[i + 1] - a
             val lengthSquared = ab.x * ab.x + ab.y * ab.y
             val ah = head - a
