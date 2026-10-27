@@ -7,6 +7,26 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class WorldTest {
+    @Test fun collectionBoundaryIsIdenticalAtEveryLightLevelIncludingRestoredGames() {
+        val head = Offset(540f, 960f)
+        val dragon = com.valerie.yurei.core.entity.Dragon(head)
+        listOf(1f, 0.8f, 0.5f, 0.15f, 0f).forEach { light ->
+            dragon.setLight(light)
+            val restored = com.valerie.yurei.core.entity.Dragon().apply {
+                restore(listOf(head), light)
+            }
+            listOf(dragon, restored).forEach { candidate ->
+                val world = World(Size(1080f, 1920f), initialSoulCount = 0)
+                world.restore(listOf(
+                    com.valerie.yurei.core.world.Soul(1, head + Offset(67f, 0f), radius = 20f, pulsePhase = 0f),
+                    com.valerie.yurei.core.world.Soul(2, head + Offset(69f, 0f), radius = 20f, pulsePhase = 0f)
+                ), emptyList(), 0)
+                assertEquals(listOf(1), world.checkSoulCollisions(candidate.headPosition, candidate.getHeadRadius()))
+                assertEquals(listOf(2), world.getSouls().map { it.id })
+            }
+        }
+    }
+
     @Test fun verySmallSurfaceDoesNotProduceInvalidSpawnRanges() {
         val world = World(Size(20f, 10f))
         assertTrue(world.getSouls().all { it.position == Offset(10f, 5f) })

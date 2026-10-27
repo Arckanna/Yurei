@@ -25,6 +25,10 @@ class Dragon(
     initialLength: Int = 1,
     initialLight: Float = 0.5f
 ) {
+    companion object {
+        // Logical world units: collection reach must not depend on the remaining light.
+        const val HEAD_RADIUS = 48f
+    }
     // Position de la tête (premier segment)
     var headPosition: Offset = initialPosition
         private set
@@ -168,7 +172,7 @@ class Dragon(
     /**
      * Retourne le rayon de collision de la tête.
      */
-    fun getHeadRadius(): Float = 24f + 24f * light
+    fun getHeadRadius(): Float = HEAD_RADIUS
 
     /**
      * Vérifie si une position donnée entre en collision avec la tête.

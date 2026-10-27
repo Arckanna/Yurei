@@ -11,7 +11,7 @@ data class DragonSegmentVM(
 
 data class DragonVM(
     val segments: List<DragonSegmentVM> = emptyList(),
-    val headRadius: Float = 24f
+    val headRadius: Float = com.valerie.yurei.core.entity.Dragon.HEAD_RADIUS
 )
 
 data class SoulVM(
