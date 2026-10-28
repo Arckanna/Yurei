@@ -96,7 +96,7 @@ class SakuraLevelTest {
             scenario.onActivity { vm.event(GameIntent.Continue); vm.resume() }
             SystemClock.sleep(400)
             scenario.onActivity { vm.pause() }
-            assertTrue(vm.state.value.hitScenery)
+            assertEquals(true, vm.state.value.hitScenery)
             assertTrue(vm.state.value.collisionGraceMs > 0)
             assertTrue(vm.state.value.remainingMs in 108000..110000)
             assertEquals(2, repository.loadGame()!!.level)

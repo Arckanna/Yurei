@@ -21,6 +21,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.valerie.yurei.core.world.MoonShrine
 import com.valerie.yurei.core.world.SakuraGarden
 import com.valerie.yurei.core.world.LanternJourney
 import com.valerie.yurei.ui.components.SteeringJoystick
@@ -48,7 +49,7 @@ fun GameScreen(
         })
     }
     if (ui.phase == GamePhase.Completed) {
-        MemoryScreen(level = ui.level, onHome = { onEvent(GameIntent.Quit) }, onReplay = { onEvent(GameIntent.Start) }, onNext = { onEvent(GameIntent.StartLevel(2)) })
+        MemoryScreen(level = ui.level, onHome = { onEvent(GameIntent.Quit) }, onReplay = { onEvent(GameIntent.Start) }, onNext = { onEvent(GameIntent.StartLevel(ui.level + 1)) })
         return
     }
     Box(Modifier.fillMaxSize().background(Ink).systemBarsPadding()) {
@@ -57,8 +58,8 @@ fun GameScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text(if (ui.level == 2) "LE JARDIN DES PROMESSES" else "LE LAC DES LANTERNES", color = Gold, fontSize = 11.sp, letterSpacing = 2.sp)
-                    Text((if (ui.level == 2) SakuraGarden.titles else LanternJourney.titles)[ui.chapter], color = Paper, fontSize = 18.sp)
+                    Text(if (ui.level == 3) "LE SANCTUAIRE DES MARÉES" else if (ui.level == 2) "LE JARDIN DES PROMESSES" else "LE LAC DES LANTERNES", color = Gold, fontSize = 11.sp, letterSpacing = 2.sp)
+                    Text((if (ui.level == 3) MoonShrine.titles else if (ui.level == 2) SakuraGarden.titles else LanternJourney.titles)[ui.chapter], color = Paper, fontSize = 18.sp)
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     val seconds = (ui.remainingMs + 999) / 1000
@@ -91,7 +92,7 @@ fun GameScreen(
                 }
                 if (ui.phase == GamePhase.Running && ui.collisionGraceMs > 0) {
                     Text(when (ui.hitScenery) {
-                        true -> "Pierre touchée : −10 s · Protection temporaire"
+                        true -> if (ui.level == 3) "Sceau éveillé : −10 s · Protection temporaire" else "Pierre touchée : −10 s · Protection temporaire"
                         false -> "Queue touchée : −10 s · Protection temporaire"
                         null -> "Collision : −10 s · Protection temporaire"
                     }, color = Paper, modifier = Modifier
@@ -147,15 +148,16 @@ private fun JourneyIntro(level: Int, onBegin: () -> Unit) {
     Box(Modifier.fillMaxSize().background(Ink.copy(alpha = 0.9f)), contentAlignment = Alignment.Center) {
         Column(Modifier.widthIn(max = 420.dp).verticalScroll(rememberScrollState()).padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(if (level == 2) "二  /  DEUXIÈME SOUVENIR" else "一  /  PREMIER SOUVENIR", color = Gold, fontSize = 12.sp, letterSpacing = 2.sp)
+            Text(if (level == 3) "三  /  TROISIÈME SOUVENIR" else if (level == 2) "二  /  DEUXIÈME SOUVENIR" else "一  /  PREMIER SOUVENIR", color = Gold, fontSize = 12.sp, letterSpacing = 2.sp)
             Spacer(Modifier.height(24.dp))
-            Text(if (level == 2) "Le jardin des\npromesses" else "Le lac des\nlanternes", color = Paper, fontSize = 36.sp, lineHeight = 44.sp, textAlign = TextAlign.Center)
+            Text(if (level == 3) "Le sanctuaire des\nmarées" else if (level == 2) "Le jardin des\npromesses" else "Le lac des\nlanternes", color = Paper, fontSize = 36.sp, lineHeight = 44.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
-            Text(if (level == 2) "Sous les cerisiers, une promesse attend de refleurir." else "Au-delà de la brume, une lumière vous attend.", color = Paper, fontSize = 17.sp, textAlign = TextAlign.Center)
+            Text(if (level == 3) "À chaque marée, la cloche rappelle ceux qui cherchent leur chemin." else if (level == 2) "Sous les cerisiers, une promesse attend de refleurir." else "Au-delà de la brume, une lumière vous attend.", color = Paper, fontSize = 17.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
             Text("Recueillez 30 âmes avant la fin des trois minutes.\n\nLe dragon avance seul. Posez le doigt, puis écartez-le du centre du joystick pour choisir une direction. Revenez au centre ou relâchez pour conserver le cap. Chaque âme allonge son corps.\n\nToucher votre queue coûte 10 secondes et trois segments. Vous êtes ensuite protégé pendant deux secondes. Les berges vous font rebondir sans pénalité.",
                 color = Paper.copy(alpha = 0.8f), fontSize = 15.sp, lineHeight = 23.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(24.dp))
+            if (level == 3) Text("Les trois sceaux respirent à tour de rôle. Cercle fin : passage libre. Double contour doré : deux secondes pour sortir. Disque vermillon rayonnant : danger pendant deux secondes, puis il se rendort. Un contact coûte 10 secondes et trois segments. Les torii sont décoratifs.", color = Gold, textAlign = TextAlign.Center, fontSize = 15.sp)
             if (level == 2) Text("Contournez les trois pierres bordées de rose : les toucher coûte aussi 10 secondes. Les pétales et les arbres sont décoratifs.", color = Gold, textAlign = TextAlign.Center, fontSize = 15.sp)
             Text("30 ÂMES · 3 MINUTES · ÉVITEZ VOTRE QUEUE", color = Gold, fontSize = 11.sp, letterSpacing = 1.sp)
             Spacer(Modifier.height(20.dp))
@@ -172,19 +174,20 @@ fun MemoryScreen(onHome: () -> Unit, onReplay: () -> Unit, level: Int = 1, onNex
         .padding(horizontal = 28.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("SOUVENIR RETROUVÉ", color = Gold, fontSize = 12.sp, letterSpacing = 3.sp)
         Canvas(Modifier.fillMaxWidth().height(260.dp).semantics {
-            contentDescription = if (level == 2) "Sous un cerisier en fleurs, une silhouette offre un pétale au dragon." else "Sur la rive, une petite silhouette offre une lanterne au dragon. Leurs reflets se rejoignent dans l’eau."
-        }) { if (level == 2) drawSakuraMemory() else drawLanternMemory() }
-        Text(if (level == 2) "La promesse du printemps" else "La lanterne offerte", color = Paper, fontSize = 30.sp, textAlign = TextAlign.Center)
+            contentDescription = if (level == 3) "Sous la lune, deux silhouettes font sonner une cloche devant un torii." else if (level == 2) "Sous un cerisier en fleurs, une silhouette offre un pétale au dragon." else "Sur la rive, une petite silhouette offre une lanterne au dragon. Leurs reflets se rejoignent dans l’eau."
+        }) { if (level == 3) drawMoonMemory() else if (level == 2) drawSakuraMemory() else drawLanternMemory() }
+        Text(if (level == 3) "La cloche du retour" else if (level == 2) "La promesse du printemps" else "La lanterne offerte", color = Paper, fontSize = 30.sp, textAlign = TextAlign.Center)
         Spacer(Modifier.height(18.dp))
-        Text(if (level == 2) "Chaque printemps, vous reveniez sous cet arbre. Une petite main déposait un pétale dans votre paume.\n\nMême lorsque les fleurs tombaient, la promesse restait : nous nous retrouverons." else "Avant la brume, quelqu’un vous attendait sur cette rive.\n\nUne petite main avait levé une lanterne. Vous n’aviez pas besoin de retrouver le chemin seul.",
+        Text(if (level == 3) "Vous montiez ces marches à la tombée du jour. À vos côtés, une petite main tirait la corde de la cloche.\n\nSon écho traversait la baie. Ce n’était pas un appel pour partir, mais une promesse : où que vous alliez, quelqu’un garderait une lumière pour votre retour." else if (level == 2) "Chaque printemps, vous reveniez sous cet arbre. Une petite main déposait un pétale dans votre paume.\n\nMême lorsque les fleurs tombaient, la promesse restait : nous nous retrouverons." else "Avant la brume, quelqu’un vous attendait sur cette rive.\n\nUne petite main avait levé une lanterne. Vous n’aviez pas besoin de retrouver le chemin seul.",
             color = Paper.copy(alpha = 0.85f), fontSize = 17.sp, lineHeight = 26.sp, textAlign = TextAlign.Center)
         Spacer(Modifier.height(20.dp))
-        Text(if (level == 2) "Ce qui a fleuri en vous ne disparaît pas." else "La lumière reçue demeure en vous.", color = Gold, fontSize = 16.sp, textAlign = TextAlign.Center)
+        Text(if (level == 3) "Même au loin, vous aviez une place où revenir." else if (level == 2) "Ce qui a fleuri en vous ne disparaît pas." else "La lumière reçue demeure en vous.", color = Gold, fontSize = 16.sp, textAlign = TextAlign.Center)
         Spacer(Modifier.height(28.dp))
         Button(onClick = onHome, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) {
             Text("Retour au sanctuaire")
         }
         if (level == 1) Button(onClick = onNext, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE5B0C9), contentColor = Ink)) { Text("Vers le jardin des sakuras") }
+        if (level == 2) Button(onClick = onNext, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBCD5EE), contentColor = Ink)) { Text("Vers le sanctuaire des marées") }
         TextButton(onClick = onReplay) { Text("Rejouer ce monde", color = Paper) }
     }
 }
