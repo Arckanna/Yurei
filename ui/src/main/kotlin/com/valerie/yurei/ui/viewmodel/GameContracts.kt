@@ -28,6 +28,8 @@ data class FogParticleVM(
 
 data class GameUiState(
     val level: Int = 1,
+    val worldTimeMs: Long = 0,
+    val moonMemoryUnlocked: Boolean = false,
     val sakuraMemoryUnlocked: Boolean = false,
     val hitScenery: Boolean? = null,
     val remainingMs: Long = 180_000,

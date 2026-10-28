@@ -105,6 +105,8 @@ fun YureiApp() {
                 val uiState by viewModel.state.collectAsState()
                 HomeScreen(
                     onStartGame = { viewModel.event(GameIntent.StartLevel(1)) },
+                    onMoon = { viewModel.event(GameIntent.StartLevel(3)) },
+                    moonMemoryUnlocked = uiState.moonMemoryUnlocked,
                     onSakura = { viewModel.event(GameIntent.StartLevel(2)) },
                     sakuraMemoryUnlocked = uiState.sakuraMemoryUnlocked,
                     highScore = uiState.highScore,

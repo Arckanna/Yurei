@@ -18,6 +18,14 @@ class SavedGameTest {
         assertEquals(game, SavedGameCodec.decode(SavedGameCodec.encode(game)))
     }
 
+    @Test fun moonSavePreservesPhaseAndRequiresTheNewWorldVersion() {
+        val saved = game.copy(version = 7, level = 3, deployedSegments = listOf(false, true),
+            worldTimeMs = 7350, hitScenery = true, graceMs = 1600)
+        assertEquals(saved, SavedGameCodec.decode(SavedGameCodec.encode(saved)))
+        assertFalse(saved.copy(version = 6).isValid())
+        assertFalse(saved.copy(level = 4).isValid())
+    }
+
     @Test fun collisionCauseAndGraceSurviveSaving() {
         for (cause in listOf(true, false, null)) {
             val saved = game.copy(version = 6, level = 2, graceMs = 1200,
@@ -57,7 +65,7 @@ class SavedGameTest {
     @Test fun sakuraSaveRetainsItsLevelAndRejectsUnknownWorlds() {
         val sakura = game.copy(version = 5, level = 2, collected = 18)
         assertEquals(sakura, SavedGameCodec.decode(SavedGameCodec.encode(sakura)))
-        assertFalse(sakura.copy(level = 3).isValid())
+        assertFalse(sakura.copy(level = 4).isValid())
         assertFalse(sakura.copy(version = 4).isValid())
         assertEquals(1, SavedGameCodec.decode(SavedGameCodec.encode(game)).level)
     }
@@ -85,7 +93,7 @@ class SavedGameTest {
     }
 
     @Test fun invalidStatesAndUnsupportedVersionsAreRejected() {
-        listOf(game.copy(width = 0f), game.copy(light = Float.NaN), game.copy(version = 7),
+        listOf(game.copy(width = 0f), game.copy(light = Float.NaN), game.copy(version = 8),
             game.copy(segments = emptyList()), game.copy(idleMs = -1),
             game.copy(souls = game.souls + game.souls)).forEach { assertFalse(it.isValid()) }
         assertThrows(IllegalArgumentException::class.java) { SavedGameCodec.decode("{broken") }

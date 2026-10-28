@@ -2,6 +2,8 @@
 package com.valerie.yurei.ui.screens
 import com.valerie.yurei.ui.R
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -32,6 +34,8 @@ fun HomeScreen(
     memoryUnlocked: Boolean = false,
     sakuraMemoryUnlocked: Boolean = false,
     onSakura: () -> Unit = {},
+    onMoon: () -> Unit = {},
+    moonMemoryUnlocked: Boolean = false,
     ready: Boolean = true,
     hasSavedGame: Boolean = false,
     onContinue: () -> Unit = {},
@@ -126,7 +130,13 @@ fun HomeScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally) {
+                if (sakuraMemoryUnlocked) {
+                    Button(onClick = onMoon, enabled = ready, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBCD5EE), contentColor = Color(0xFF18243F))) {
+                        Text(if (moonMemoryUnlocked) "Rejouer le sanctuaire des marées" else "III · Le sanctuaire des marées")
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
                 if (memoryUnlocked) {
                     Button(onClick = onSakura, enabled = ready, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE5B0C9), contentColor = Color(0xFF302338))) {
                         Text(if (sakuraMemoryUnlocked) "Rejouer le jardin des sakuras" else "II · Le jardin des sakuras")

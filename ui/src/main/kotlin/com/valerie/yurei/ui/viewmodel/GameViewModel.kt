@@ -12,6 +12,7 @@ import com.valerie.yurei.core.engine.LightBalance
 import com.valerie.yurei.core.world.GameViewport
 import com.valerie.yurei.core.world.LanternJourney
 import com.valerie.yurei.core.world.TimedChallenge
+import com.valerie.yurei.core.world.MoonShrine
 import com.valerie.yurei.core.world.SakuraGarden
 import com.valerie.yurei.core.world.Soul
 import com.valerie.yurei.core.world.FogParticle
@@ -81,7 +82,11 @@ class GameViewModel(
             audioManager.playSfx(Sfx.SoulCollect)
         }
 
-        val stoneHit = level == 2 && SakuraGarden.touchesStone(d.headPosition, worldSize)
+        val stoneHit = when (level) {
+            2 -> SakuraGarden.touchesStone(d.headPosition, worldSize)
+            3 -> MoonShrine.touchesSeal(d.headPosition, worldSize, w.getTimeMs())
+            else -> false
+        }
         val hit = challenge.tick(activeMs, collectedSoulIds.size, challenge.touchesTail(d) || stoneHit)
         if (hit) {
             _state.update { it.copy(hitScenery = stoneHit) }
@@ -138,6 +143,7 @@ class GameViewModel(
                         it.copy(
                             highScore = prefs.highScore,
                             memoryUnlocked = prefs.memoryUnlocked || it.memoryUnlocked,
+                            moonMemoryUnlocked = prefs.moonMemoryUnlocked || it.moonMemoryUnlocked,
                             sakuraMemoryUnlocked = prefs.sakuraMemoryUnlocked || it.sakuraMemoryUnlocked,
                             musicEnabled = prefs.musicEnabled,
                             sfxEnabled = prefs.sfxEnabled
@@ -151,9 +157,9 @@ class GameViewModel(
 
     private fun finishJourney() {
         loop.stop()
-        _state.update { it.copy(phase = GamePhase.Completed, memoryUnlocked = true, sakuraMemoryUnlocked = it.sakuraMemoryUnlocked || level == 2) }
+        _state.update { it.copy(phase = GamePhase.Completed, memoryUnlocked = true, sakuraMemoryUnlocked = it.sakuraMemoryUnlocked || level >= 2, moonMemoryUnlocked = it.moonMemoryUnlocked || level == 3) }
         checkpoint()
-        audioManager.prepareMusic(if (level == 2) "sakura_memory" else "memory", loop = false)
+        audioManager.prepareMusic(memoryTrack(), loop = false)
         audioManager.startMusic()
     }
 
@@ -180,6 +186,7 @@ class GameViewModel(
 
         _state.update { it.copy(
             level = level,
+            worldTimeMs = w.getTimeMs(),
             chapter = journey.chapter,
             chapterMs = journey.chapterMs,
             offerings = journey.offerings,
@@ -260,8 +267,9 @@ class GameViewModel(
     }
 
     private fun startLevel(requested: Int) {
-        if (requested !in 1..2 || _state.value.phase == GamePhase.Running) return
+        if (requested !in 1..3 || _state.value.phase == GamePhase.Running) return
         if (requested == 2 && !_state.value.memoryUnlocked) return
+        if (requested == 3 && !_state.value.sakuraMemoryUnlocked) return
         save(null)
         loop.stop()
         audioManager.pauseMusic()
@@ -300,7 +308,7 @@ class GameViewModel(
     private fun startInternal() {
         _state.update { it.copy(phase = GamePhase.Running) }
         if (world != null) loop.start()
-        audioManager.prepareMusic(if (level == 2) "sakura" else "ambient")
+        audioManager.prepareMusic(ambientTrack())
         audioManager.startMusic(explicitResume = true)
     }
 
@@ -353,7 +361,7 @@ class GameViewModel(
         if (d.light <= 0f || challenge.lost || _state.value.phase == GamePhase.GameOver) return
         fun point(p: Offset) = SavedPoint(p.x, p.y)
         save(SavedGame(
-            version = 6, level = level, remainingMs = challenge.remainingMs, collected = challenge.collected,
+            version = 7, level = level, remainingMs = challenge.remainingMs, collected = challenge.collected,
             graceMs = challenge.graceMs, heading = challenge.heading, desiredHeading = challenge.desiredHeading,
             hitScenery = _state.value.hitScenery,
             width = worldSize.width, height = worldSize.height,
@@ -411,11 +419,15 @@ class GameViewModel(
             !saved.journeyStarted -> GamePhase.Intro
             else -> GamePhase.Paused
         }, score = saved.score, hitScenery = saved.hitScenery,
-            memoryUnlocked = it.memoryUnlocked || saved.completed || level == 2,
-            sakuraMemoryUnlocked = it.sakuraMemoryUnlocked || (saved.completed && level == 2)) }
-        audioManager.prepareMusic(if (level == 2) { if (saved.completed) "sakura_memory" else "sakura" } else { if (saved.completed) "memory" else "ambient" }, loop = !saved.completed)
+            memoryUnlocked = it.memoryUnlocked || saved.completed || level >= 2,
+            sakuraMemoryUnlocked = it.sakuraMemoryUnlocked || level == 3 || (saved.completed && level == 2),
+            moonMemoryUnlocked = it.moonMemoryUnlocked || (saved.completed && level == 3)) }
+        audioManager.prepareMusic(if (saved.completed) memoryTrack() else ambientTrack(), loop = !saved.completed)
         publishWorld(0)
     }
+
+    private fun ambientTrack() = when (level) { 3 -> "moon_shrine"; 2 -> "sakura"; else -> "ambient" }
+    private fun memoryTrack() = when (level) { 3 -> "moon_memory"; 2 -> "sakura_memory"; else -> "memory" }
 
     fun setMusicEnabled(enabled: Boolean) {
         viewModelScope.launch { gameRepository.setMusicEnabled(enabled) }

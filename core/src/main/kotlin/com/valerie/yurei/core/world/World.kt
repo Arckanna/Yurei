@@ -108,13 +108,18 @@ class World(
 
             // S'assurer que l'âme est dans les limites
             var position = Offset(x, y).confinedTo(size, 30f)
-            if (level == 2 && !SakuraGarden.isSafeForSoul(position, size)) {
+            fun safe(p: Offset) = when (level) {
+                2 -> SakuraGarden.isSafeForSoul(p, size)
+                3 -> MoonShrine.isSafeForSoul(p, size)
+                else -> true
+            }
+            if (!safe(position)) {
                 // A bounded search avoids spawning collectibles inside the new scenery.
                 position = (0 until 32).asSequence().map { step ->
                     val a = angle + step * 0.37f
                     Offset(centerX + kotlin.math.cos(a) * size.minDimension * 0.30f,
                         centerY + kotlin.math.sin(a) * size.minDimension * 0.30f).confinedTo(size, 30f)
-                }.firstOrNull { SakuraGarden.isSafeForSoul(it, size) } ?: Offset(centerX, centerY)
+                }.firstOrNull { safe(it) } ?: Offset(centerX, centerY)
             }
 
             souls.add(

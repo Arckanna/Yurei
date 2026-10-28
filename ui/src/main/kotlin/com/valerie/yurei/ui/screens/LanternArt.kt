@@ -22,8 +22,10 @@ internal fun DrawScope.drawLanternWorld(ui: GameUiState, worldSize: Size = size)
     val w = worldSize.width
     val h = worldSize.height
     val time = ui.journeyMs / 1000f
-    val lanternGold = if (ui.level == 2) Color(0xFFFFD6E5) else Color(0xFFF1CE8D)
-    if (ui.level == 2) {
+    val lanternGold = if (ui.level == 3) Color(0xFFBDE8F5) else if (ui.level == 2) Color(0xFFFFD6E5) else Color(0xFFF1CE8D)
+    if (ui.level == 3) {
+        drawMoonBackground(worldSize, ui.worldTimeMs, ui.chapter)
+    } else if (ui.level == 2) {
         drawSakuraBackground(worldSize, time, ui.chapter)
     } else {
     val palettes = listOf(Color(0xFF25344C), Color(0xFF365665), Color(0xFF787C8D))
