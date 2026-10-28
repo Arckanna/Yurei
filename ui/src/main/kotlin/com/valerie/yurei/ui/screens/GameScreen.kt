@@ -90,7 +90,11 @@ fun GameScreen(
                     }
                 }
                 if (ui.phase == GamePhase.Running && ui.collisionGraceMs > 0) {
-                    Text(if (ui.hitScenery) "Pierre touchée : −10 s · Protection temporaire" else "Queue touchée : −10 s · Protection temporaire", color = Paper, modifier = Modifier
+                    Text(when (ui.hitScenery) {
+                        true -> "Pierre touchée : −10 s · Protection temporaire"
+                        false -> "Queue touchée : −10 s · Protection temporaire"
+                        null -> "Collision : −10 s · Protection temporaire"
+                    }, color = Paper, modifier = Modifier
                         .align(Alignment.TopCenter).padding(top = 24.dp), fontSize = 16.sp)
                 }
             }

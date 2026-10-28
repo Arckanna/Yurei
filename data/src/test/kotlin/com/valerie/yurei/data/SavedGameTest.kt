@@ -18,6 +18,24 @@ class SavedGameTest {
         assertEquals(game, SavedGameCodec.decode(SavedGameCodec.encode(game)))
     }
 
+    @Test fun collisionCauseAndGraceSurviveSaving() {
+        for (cause in listOf(true, false, null)) {
+            val saved = game.copy(version = 6, level = 2, graceMs = 1200,
+                deployedSegments = listOf(false, true), hitScenery = cause)
+            val restored = SavedGameCodec.decode(SavedGameCodec.encode(saved))
+            assertEquals(cause, restored.hitScenery)
+            assertEquals(1200L, restored.graceMs)
+        }
+    }
+
+    @Test fun legacyCollisionCauseIsUnknownRatherThanAssumedToBeTail() {
+        val old = SavedGameCodec.encode(game.copy(version = 5, level = 2, graceMs = 750))
+            .replace("\"hitScenery\":null,", "")
+        val restored = SavedGameCodec.decode(old)
+        assertNull(restored.hitScenery)
+        assertEquals(750L, restored.graceMs)
+    }
+
     @Test fun deploymentSurvivesSavingAndRejectsIncompleteState() {
         val saved = game.copy(version = 6, deployedSegments = listOf(false, true))
         assertEquals(saved, SavedGameCodec.decode(SavedGameCodec.encode(saved)))

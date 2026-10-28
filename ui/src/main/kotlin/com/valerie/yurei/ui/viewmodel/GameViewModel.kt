@@ -355,6 +355,7 @@ class GameViewModel(
         save(SavedGame(
             version = 6, level = level, remainingMs = challenge.remainingMs, collected = challenge.collected,
             graceMs = challenge.graceMs, heading = challenge.heading, desiredHeading = challenge.desiredHeading,
+            hitScenery = _state.value.hitScenery,
             width = worldSize.width, height = worldSize.height,
             segments = d.getSegments().map { point(it.position) },
             deployedSegments = d.getSegments().map { it.deployed },
@@ -409,7 +410,8 @@ class GameViewModel(
             saved.completed -> GamePhase.Completed
             !saved.journeyStarted -> GamePhase.Intro
             else -> GamePhase.Paused
-        }, score = saved.score, memoryUnlocked = it.memoryUnlocked || saved.completed || level == 2,
+        }, score = saved.score, hitScenery = saved.hitScenery,
+            memoryUnlocked = it.memoryUnlocked || saved.completed || level == 2,
             sakuraMemoryUnlocked = it.sakuraMemoryUnlocked || (saved.completed && level == 2)) }
         audioManager.prepareMusic(if (level == 2) { if (saved.completed) "sakura_memory" else "sakura" } else { if (saved.completed) "memory" else "ambient" }, loop = !saved.completed)
         publishWorld(0)

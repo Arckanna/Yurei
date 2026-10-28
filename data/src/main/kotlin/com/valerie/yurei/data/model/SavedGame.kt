@@ -12,6 +12,8 @@ import kotlinx.serialization.json.Json
     val remainingMs: Long = 180_000,
     val collected: Int = 0,
     val graceMs: Long = 0,
+    // null means the cause is unknown (saves made before it was recorded).
+    val hitScenery: Boolean? = null,
     val heading: Float = -1.5707964f,
     val desiredHeading: Float = heading,
     val width: Float,

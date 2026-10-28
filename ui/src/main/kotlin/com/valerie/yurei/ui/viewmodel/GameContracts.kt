@@ -29,7 +29,7 @@ data class FogParticleVM(
 data class GameUiState(
     val level: Int = 1,
     val sakuraMemoryUnlocked: Boolean = false,
-    val hitScenery: Boolean = false,
+    val hitScenery: Boolean? = null,
     val remainingMs: Long = 180_000,
     val collected: Int = 0,
     val collisionGraceMs: Long = 0,
