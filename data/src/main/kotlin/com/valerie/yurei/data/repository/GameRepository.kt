@@ -16,6 +16,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.valerie.yurei.data.model.GamePreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "game_prefs")
 
@@ -73,7 +74,7 @@ class GameRepository(context: Context) {
             musicEnabled = prefs[Keys.MUSIC_ENABLED] ?: true,
             sfxEnabled = prefs[Keys.SFX_ENABLED] ?: true
         )
-    }
+    }.distinctUntilChanged()
 
     suspend fun updateHighScore(score: Int) {
         context.dataStore.edit { prefs ->

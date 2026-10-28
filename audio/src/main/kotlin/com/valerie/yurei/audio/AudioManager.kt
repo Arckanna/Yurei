@@ -18,13 +18,12 @@ class AudioManager(
     private var soundPool: SoundPool? = null
     private val soundIds = mutableMapOf<Sfx, Int>()
     private var musicPlayer: ExoPlayer? = null
-    private var wantsMusic = false
+    private val musicState = MusicPlaybackState()
     private val loadedSounds = mutableSetOf<Int>()
 
     var sfxEnabled: Boolean = true
         private set
-    var musicEnabled: Boolean = true
-        private set
+    val musicEnabled: Boolean get() = musicState.enabled
 
     init {
         initSoundPool()
@@ -71,8 +70,8 @@ class AudioManager(
      * Active ou désactive la musique.
      */
     fun setMusicEnabled(enabled: Boolean) {
-        musicEnabled = enabled
-        musicPlayer?.playWhenReady = enabled && wantsMusic
+        if (!musicState.setEnabled(enabled)) return
+        musicPlayer?.playWhenReady = musicState.shouldPlay
     }
 
     /**
@@ -88,6 +87,14 @@ class AudioManager(
                     .setUsage(com.google.android.exoplayer2.C.USAGE_GAME)
                     .setContentType(com.google.android.exoplayer2.C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
                 setHandleAudioBecomingNoisy(true)
+                addListener(object : Player.Listener {
+                    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                        if (!playWhenReady && (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY ||
+                                reason == Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_FOCUS_LOSS)) {
+                            musicState.interrupt()
+                        }
+                    }
+                })
                 volume = 0.65f
             }
         }
@@ -100,16 +107,16 @@ class AudioManager(
     /**
      * Démarre la musique (si préparée et musicEnabled).
      */
-    fun startMusic() {
-        wantsMusic = true
-        musicPlayer?.playWhenReady = musicEnabled
+    fun startMusic(explicitResume: Boolean = false) {
+        musicState.start(explicitResume)
+        musicPlayer?.playWhenReady = musicState.shouldPlay
     }
 
     /**
      * Met la musique en pause.
      */
     fun pauseMusic() {
-        wantsMusic = false
+        musicState.pause()
         musicPlayer?.playWhenReady = false
     }
 

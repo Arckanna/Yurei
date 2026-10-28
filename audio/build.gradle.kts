@@ -21,5 +21,6 @@ android {
 }
 
 dependencies {
+    testImplementation(libs.junit4)
     implementation(libs.exoplayer)
 }

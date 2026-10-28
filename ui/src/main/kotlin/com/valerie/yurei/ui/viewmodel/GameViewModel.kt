@@ -233,7 +233,7 @@ class GameViewModel(
                 val saved = savedGame ?: return
                 restoreGame(saved)
                 nav.toGame()
-                if (saved.completed) audioManager.startMusic()
+                if (saved.completed) audioManager.startMusic(explicitResume = true)
             }
             is GameIntent.Start -> startLevel(level)
             is GameIntent.StartLevel -> startLevel(intent.level)
@@ -301,7 +301,7 @@ class GameViewModel(
         _state.update { it.copy(phase = GamePhase.Running) }
         if (world != null) loop.start()
         audioManager.prepareMusic(if (level == 2) "sakura" else "ambient")
-        audioManager.startMusic()
+        audioManager.startMusic(explicitResume = true)
     }
 
     private fun settleActiveTime(): Boolean {
@@ -329,7 +329,7 @@ class GameViewModel(
         lastFpsUpdate = System.nanoTime() / 1_000_000L
         if (world != null) loop.start()
         audioManager.playSfx(Sfx.Resume)
-        audioManager.startMusic()
+        audioManager.startMusic(explicitResume = true)
     }
 
     private fun stopInternal(gameOver: Boolean) {
