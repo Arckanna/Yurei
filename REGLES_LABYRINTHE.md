@@ -29,7 +29,7 @@ Les valeurs chiffrées sont des **points de départ** : elles seront ajustées a
 
 ### 3.1 Le labyrinthe
 - La grille occupe le terrain logique de 1080 × 1920 unités. Proposition : cases de 120 unités, soit 9 colonnes × 16 lignes, ce qui laisse de la place pour l'affichage en haut de l'écran.
-- Les murs séparent les cases. Les labyrinthes sont **dessinés à la main** (pas de génération aléatoire) et décrits comme des données (par exemple un plan en texte), pour qu'on puisse les relire, les tester et en ajouter sans modifier le moteur.
+- Un mur occupe une case entière (choix fait à l'étape 1 : un plan s'écrit alors comme un simple dessin en texte, facile à relire et à corriger). Les labyrinthes sont **dessinés à la main** (pas de génération aléatoire) dans `core/.../maze/MazeCatalog.kt`, avec `#` pour un mur, `.` pour un couloir, `o` pour une âme et `D` pour le départ. On peut les relire, les tester et en ajouter sans modifier le moteur. Le bord de la grille compte comme un mur.
 - Le labyrinthe est fermé, sans téléportation d'un bord à l'autre.
 - Chaque tableau a une case de départ et une direction de départ.
 
@@ -40,16 +40,16 @@ Les valeurs chiffrées sont des **points de départ** : elles seront ajustées a
 - Proposition de départ : environ 15, 20 puis 25 âmes pour les tableaux 1, 2 et 3. Chaque plan est vérifié par un test : toutes les âmes sont atteignables et le tableau peut être fini.
 
 ### 3.3 Le déplacement
-- Le dragon avance seul, d'une case à la fois, à vitesse constante.
-- Un glissement donne une direction. Elle est **mémorisée** et appliquée dès que possible : tout de suite si le passage est libre, sinon au prochain carrefour qui le permet.
-- Le demi-tour direct est ignoré dès que le dragon a un corps, pour éviter une morsure involontaire.
+- Au début du tableau, le dragon attend le premier glissement. Ensuite il avance seul, d'une case à la fois, à vitesse constante.
+- Un glissement donne une direction. Elle est **mémorisée** et appliquée dès que possible : à l'arrivée sur la prochaine case si le passage est libre, sinon au premier carrefour qui le permet.
+- Le demi-tour direct est ignoré dès que le dragon a un corps, pour éviter une morsure involontaire. Les autres virages sont toujours mémorisés.
 - Devant un mur, le dragon s'arrête, tout son corps aussi. Il repart au glissement suivant vers un passage libre.
 - Quand le dragon est arrêté, rien ne se passe à son détriment : il ne perd ni lanterne ni temps de bonus.
 - Proposition de vitesse : 4 cases par seconde au tableau 1, puis 5 et 6.
 
 ### 3.4 Les lanternes (vies)
 - Chaque tableau commence avec 3 lanternes.
-- Si la tête entre dans une case occupée par le corps, une lanterne s'éteint. Le dragon s'arrête, puis devient translucide pendant 2 secondes : il peut alors traverser son propre corps pour se dégager.
+- Si la tête entre dans une case occupée par le corps, une lanterne s'éteint. Le dragon s'arrête devant le corps et attend un glissement ; il devient translucide pendant 2 secondes de déplacement : il peut alors traverser son propre corps pour se dégager. Entrer dans la case que le bout de la queue est en train de quitter n'est pas une morsure.
 - Les âmes déjà recueillies restent acquises.
 - À 0 lanterne, le tableau est perdu. On le recommence depuis le début, avec 3 lanternes. Les tableaux déjà réussis et les souvenirs restent acquis.
 
