@@ -6,6 +6,8 @@ sealed class Route(val path: String) {
     data object Home : Route("home")
     data object Game : Route("game")
     data object Settings : Route("settings")
+    /** Prototype du labyrinthe (étape 2) ; remplacera Game quand les règles seront complètes. */
+    data object Maze : Route("maze")
 }
 
 interface RootNav {
@@ -13,6 +15,8 @@ interface RootNav {
     fun toGame()
     fun toSettings()
     fun back()
+    /** Implémentation vide par défaut : les navigateurs de test n'ont pas à la fournir. */
+    fun toMaze() = Unit
 }
 
 class RootNavigator(private val nav: NavHostController) : RootNav {
@@ -21,6 +25,10 @@ class RootNavigator(private val nav: NavHostController) : RootNav {
         launchSingleTop = true
     }
     override fun toGame() = nav.navigate(Route.Game.path) {
+        popUpTo(Route.Home.path) { inclusive = false }
+        launchSingleTop = true
+    }
+    override fun toMaze() = nav.navigate(Route.Maze.path) {
         popUpTo(Route.Home.path) { inclusive = false }
         launchSingleTop = true
     }

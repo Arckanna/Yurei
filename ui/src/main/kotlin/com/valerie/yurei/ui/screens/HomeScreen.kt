@@ -39,7 +39,9 @@ fun HomeScreen(
     ready: Boolean = true,
     hasSavedGame: Boolean = false,
     onContinue: () -> Unit = {},
-    onOpenSettings: (() -> Unit)? = null
+    onOpenSettings: (() -> Unit)? = null,
+    /** Prototype du labyrinthe : le bouton n'apparaît que si l'action est fournie. */
+    onMazePrototype: (() -> Unit)? = null
 ) {
     Box(Modifier.fillMaxSize()) {
         // 1) Fond illustré
@@ -160,6 +162,13 @@ fun HomeScreen(
                         .shadow(6.dp, RoundedCornerShape(16.dp))
                 ) {
                     Text(if (!ready) "Chargement…" else "Commencer la partie", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                }
+                onMazePrototype?.let { openMaze ->
+                    Spacer(Modifier.height(8.dp))
+                    TextButton(
+                        onClick = openMaze,
+                        modifier = Modifier.background(Color(0x880E1B2A), RoundedCornerShape(12.dp))
+                    ) { Text("Essai · le lac en labyrinthe", color = Color.White) }
                 }
                 }
             }

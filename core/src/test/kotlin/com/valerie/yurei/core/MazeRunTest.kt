@@ -2,6 +2,7 @@ package com.valerie.yurei.core
 
 import com.valerie.yurei.core.maze.Cell
 import com.valerie.yurei.core.maze.Direction
+import com.valerie.yurei.core.maze.GridPoint
 import com.valerie.yurei.core.maze.MazeLevel
 import com.valerie.yurei.core.maze.MazePlan
 import com.valerie.yurei.core.maze.MazeRun
@@ -180,6 +181,51 @@ class MazeRunTest {
         assertFalse(game.moving)
         // 2 âmes + tableau + 89 secondes restantes sous 90 s.
         assertEquals(2 * 10 + 500 + 89 * 10, game.score)
+    }
+
+    @Test fun bodyPointsSlideTowardsTheNextCell() {
+        val game = run("Do...o")
+        assertEquals("à l'arrêt : centre de la case", listOf(GridPoint(0.5f, 0.5f)), game.bodyPoints())
+        game.swipe(Direction.Right)
+        game.advance(250) // a mangé (1,0) : corps (1,0), (0,0)
+        game.advance(100) // 40 % du pas suivant
+        val points = game.bodyPoints()
+        assertEquals(1.9f, points[0].x, 0.001f)
+        assertEquals(0.9f, points[1].x, 0.001f)
+        assertEquals(0.5f, points[1].y, 0.001f)
+    }
+
+    @Test fun theTailWaitsWhenTheDragonIsAboutToGrow() {
+        val game = run("Doo.")
+        game.swipe(Direction.Right)
+        game.advance(250) // corps (1,0), (0,0) ; l'âme (2,0) est devant
+        game.advance(100)
+        val points = game.bodyPoints()
+        assertEquals(1.9f, points[0].x, 0.001f)
+        assertEquals("la queue reste : le corps va s'allonger", 0.5f, points[1].x, 0.001f)
+    }
+
+    @Test fun theHeadDoesNotSlideIntoABite() {
+        // Même parcours que biteScenario, arrêté juste avant la morsure.
+        val game = run(
+            """
+            Doooo.
+            ......
+            .....o
+            """
+        )
+        game.swipe(Direction.Right)
+        game.advance(750)
+        game.swipe(Direction.Down)
+        game.advance(250)
+        game.swipe(Direction.Left)
+        game.advance(250)
+        game.swipe(Direction.Up)
+        game.advance(250)          // (3,1), le corps est en (3,0)
+        game.advance(100)          // 40 % du pas qui va mordre
+        assertTrue(game.moving)
+        assertEquals("la tête reste sur sa case", GridPoint(3.5f, 1.5f), game.bodyPoints()[0])
+        assertEquals("le corps aussi, sans se tasser", GridPoint(4.5f, 1.5f), game.bodyPoints()[1])
     }
 
     @Test fun timeBonusShrinksAndNeverGoesNegative() {

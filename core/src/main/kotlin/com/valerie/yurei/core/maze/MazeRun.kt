@@ -1,5 +1,8 @@
 package com.valerie.yurei.core.maze
 
+/** Un point de la grille en cases, avec décimales : sert au dessin fluide. */
+data class GridPoint(val x: Float, val y: Float)
+
 /**
  * Règles d'un tableau en cours (cf. REGLES_LABYRINTHE.md §3).
  *
@@ -117,17 +120,40 @@ class MazeRun(
     /** Bonus de temps actuel, à afficher pendant la partie. */
     fun currentTimeBonus(): Int = timeBonus(elapsedMs)
 
+    /**
+     * Position de chaque segment pour l'affichage, en cases (le centre de la case
+     * (2, 3) vaut (2.5, 3.5)), la tête en premier.
+     *
+     * Pendant un pas, chaque segment glisse vers la case du segment qui le précède,
+     * de [stepProgress]. Exceptions : la queue reste en place si le dragon va grandir,
+     * et tout le dragon reste immobile si le pas en cours finit par une morsure
+     * (il s'arrêtera devant son corps, sans s'y enfoncer puis reculer).
+     */
+    fun bodyPoints(): List<GridPoint> {
+        val advancing = moving && !bitesAt(head.next(heading))
+        val growing = head.next(heading) in souls
+        val t = if (advancing) stepProgress else 0f
+        return segments.mapIndexed { i, cell ->
+            val target = when {
+                i == 0 -> cell.next(heading)
+                i == segments.lastIndex && growing -> cell
+                else -> segments[i - 1]
+            }
+            GridPoint(
+                cell.col + 0.5f + (target.col - cell.col) * t,
+                cell.row + 0.5f + (target.row - cell.row) * t
+            )
+        }
+    }
+
     /** Le dragon entre dans la case suivante. */
     private fun step() {
         val target = head.next(heading)
-        val eats = target in souls
-        // Pendant ce pas, le bout de la queue libère sa case, sauf si le dragon grandit :
-        // entrer dans la case que la queue quitte n'est donc pas une morsure.
-        val tailLeaving = if (eats) null else segments.last()
-        if (graceMs == 0L && target in segments && target != tailLeaving) {
+        if (bitesAt(target)) {
             bite()
             return
         }
+        val eats = target in souls
         segments.addFirst(target)
         if (eats) {
             souls.remove(target)
@@ -153,6 +179,16 @@ class MazeRun(
             stop()
         }
         // Sinon on continue tout droit, et le virage reste mémorisé pour un prochain carrefour.
+    }
+
+    /**
+     * Vrai si entrer dans [target] est une morsure. Pendant un pas, le bout de la queue
+     * libère sa case, sauf si le dragon grandit : y entrer n'est donc pas une morsure.
+     */
+    private fun bitesAt(target: Cell): Boolean {
+        if (graceMs > 0L || target !in segments) return false
+        val tailLeaving = if (target in souls) null else segments.last()
+        return target != tailLeaving
     }
 
     private fun bite() {

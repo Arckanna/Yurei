@@ -36,6 +36,8 @@ import com.valerie.yurei.ui.navigation.RootNavigator
 import com.valerie.yurei.ui.navigation.Route
 import com.valerie.yurei.ui.screens.GameScreen
 import com.valerie.yurei.ui.screens.HomeScreen
+import com.valerie.yurei.ui.screens.MazeScreen
+import com.valerie.yurei.ui.viewmodel.MazeViewModel
 import com.valerie.yurei.ui.screens.SettingsScreen
 import com.valerie.yurei.ui.viewmodel.GameViewModel
 import com.valerie.yurei.ui.viewmodel.GameViewModelFactory
@@ -74,16 +76,23 @@ fun YureiApp() {
         factory = GameViewModelFactory(application, rootNav)
     )
 
+    // Prototype du labyrinthe : état séparé, sans sauvegarde (REGLES_LABYRINTHE.md §6, étape 2).
+    val mazeViewModel: MazeViewModel = viewModel()
+
     SideEffect { viewModel.updateNavigator(rootNav) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, viewModel) {
+    DisposableEffect(lifecycleOwner, viewModel, mazeViewModel) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE) viewModel.pause()
+            if (event == Lifecycle.Event.ON_PAUSE) {
+                viewModel.pause()
+                mazeViewModel.pause()
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             viewModel.pause()
+            mazeViewModel.pause()
         }
     }
 
@@ -114,6 +123,27 @@ fun YureiApp() {
                     memoryUnlocked = uiState.memoryUnlocked,
                     hasSavedGame = uiState.hasSavedGame,
                     onContinue = { viewModel.event(GameIntent.Continue) },
+                    onOpenSettings = { rootNav.toSettings() },
+                    onMazePrototype = {
+                        mazeViewModel.open()
+                        rootNav.toMaze()
+                    }
+                )
+            }
+
+            // Prototype du labyrinthe du lac
+            composable(Route.Maze.path) {
+                MazeScreen(
+                    state = mazeViewModel.state,
+                    onBegin = mazeViewModel::begin,
+                    onSwipe = mazeViewModel::swipe,
+                    onPause = mazeViewModel::pause,
+                    onResume = mazeViewModel::resume,
+                    onRestart = mazeViewModel::restart,
+                    onQuit = {
+                        mazeViewModel.quit()
+                        rootNav.toHome()
+                    },
                     onOpenSettings = { rootNav.toSettings() }
                 )
             }
