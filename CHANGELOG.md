@@ -5,6 +5,15 @@
 
 ---
 
+## [Non publié] - 2026-11-17
+
+### Labyrinthe — étape 1 : moteur (pas encore jouable)
+
+- Nouveau paquet `core/.../maze/` en Kotlin pur, sans Compose : `MazePlan` (plan écrit en texte, vérifié à la lecture, recherche des âmes inatteignables), `MazeLevel` (un tableau = des données), `MazeRun` (règles d'un tableau) et `MazeCatalog` (premier tableau du lac, `lac-1`, 9 × 16 cases, 15 âmes, 4 cases/s).
+- Règles codées d'après `REGLES_LABYRINTHE.md` : déplacement case par case dans 4 directions, attente du premier glissement, virage mémorisé jusqu'au prochain carrefour, demi-tour ignoré, arrêt sans pénalité devant un mur, croissance d'un segment par âme, morsure = une lanterne et 2 s de traversée possible, échec à 0 lanterne, victoire quand toutes les âmes sont recueillies. Score : 10 par âme, 500 par tableau, 10 par seconde restante sous 90 s. Le temps et la protection ne s'écoulent que quand le dragon avance.
+- Le moteur n'est pas encore branché à l'interface : le jeu fonctionne toujours avec l'ancien défi.
+- Validation : 16 nouveaux tests JVM (60 au total dans `:core`, tous réussis), `assembleDebug` réussi.
+
 ## [Non publié] - 2026-10-27
 
 ### Niveau 2 — Le jardin des promesses
