@@ -5,6 +5,17 @@
 
 ---
 
+## [Non publié] - 2026-11-18
+
+### Labyrinthe — étape 2 : prototype du lac (essai)
+
+- Nouveau bouton « Essai · le lac en labyrinthe » sur l'accueil : le tableau `lac-1` devient jouable, à côté de l'ancien défi qui reste inchangé.
+- Commande par glissements du doigt (4 directions, seuil de 24 dp) ; un geste en « L » sans lever le doigt donne deux virages. Le joystick n'est pas utilisé dans ce mode.
+- Affichage discret : lanternes, âmes restantes, bonus de temps, tableau. La pause reste le seul bouton en jeu ; elle se déclenche aussi en passant en arrière-plan. Écrans de fin : « Tableau réussi » (détail du score) ou « Les lanternes se sont éteintes ».
+- Dessin fluide entre deux cases (`MazeRun.bodyPoints`) : la queue attend quand le dragon va grandir, et le dragon ne s'enfonce pas dans son corps avant une morsure. Le dragon translucide clignote doucement pendant sa protection.
+- Limites de l'essai : pas de sauvegarde (prévue avec la v8, étape 3), pas de son, score non retenu dans le record.
+- Validation : 7 nouveaux tests JVM (67 dans `:core`, tous réussis), `assembleDebug` et `lintDebug` réussis ; pas encore essayé sur téléphone ni émulateur.
+
 ## [Non publié] - 2026-11-17
 
 ### Labyrinthe — étape 1 : moteur (pas encore jouable)
