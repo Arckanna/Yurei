@@ -82,9 +82,15 @@ class PersistenceTest {
                 assertEquals(paused.souls, vm.state.value.souls)
                 assertEquals(paused.remainingMs, vm.state.value.remainingMs)
             }
-            // Quit must retain the world, and a new game must invalidate it.
+            // Quitter conserve la partie, réécrite au format actuel (v7) : même monde,
+            // avec les segments marqués « non déployés » que la v5 ne connaissait pas.
+            // À mettre à jour volontairement lors du passage à la v8.
             instrumentation.runOnMainSync { vm.quit() }
-            assertEquals(fixture, repository.loadGame())
+            assertEquals(
+                fixture.copy(version = 7, deployedSegments = listOf(false, false)),
+                repository.loadGame()
+            )
+            // Une nouvelle partie invalide l'ancienne.
             instrumentation.runOnMainSync { vm.start(); vm.pause() }
             val fresh = repository.loadGame()!!
             assertEquals(0, fresh.score)

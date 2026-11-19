@@ -7,6 +7,10 @@
 
 ## [Non publié] - 2026-11-18
 
+### Tests — sauvegarde
+
+- `PersistenceTest` attend désormais, après « Quitter », la sauvegarde réécrite au format v7 (segments non déployés) au lieu de la sauvegarde v5 d'origine. Le test était resté au format v5 lors du passage à la v7 ; le jeu n'a pas changé. Validation : test réussi sur émulateur (API 36), `assembleDebug` réussi.
+
 ### Labyrinthe — étape 2 : prototype du lac (essai)
 
 - Nouveau bouton « Essai · le lac en labyrinthe » sur l'accueil : le tableau `lac-1` devient jouable, à côté de l'ancien défi qui reste inchangé.
