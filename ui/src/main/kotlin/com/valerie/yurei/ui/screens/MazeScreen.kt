@@ -51,7 +51,10 @@ fun MazeScreen(
     onResume: () -> Unit,
     onRestart: () -> Unit,
     onQuit: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onNextLevel: () -> Unit,
+    onChooseLevel: (index: Int) -> Unit,
+    onReplayWorld: () -> Unit
 ) {
     val ui by state.collectAsState()
     val currentOnSwipe by rememberUpdatedState(onSwipe)
@@ -61,6 +64,12 @@ fun MazeScreen(
             MazePhase.Paused -> onResume()
             else -> onQuit()
         }
+    }
+    if (ui.phase == MazePhase.Memory) {
+        // Le souvenir du lac, le même que dans l'ancien défi. Le jardin en labyrinthe
+        // n'existe pas encore : pas de bouton « monde suivant » dans l'essai.
+        MemoryScreen(level = 1, onHome = onQuit, onReplay = onReplayWorld, showNext = false)
+        return
     }
     Box(Modifier.fillMaxSize().background(MazeInk).systemBarsPadding()) {
         Column(Modifier.fillMaxSize()) {
@@ -85,44 +94,48 @@ fun MazeScreen(
                         }
                     }
                 }
-                val hint = when {
-                    ui.waitingForFirstSwipe -> "Glissez le doigt pour réveiller le dragon"
-                    ui.bitten -> "Une lanterne s’éteint · glissez pour repartir"
-                    else -> null
-                }
-                if (hint != null) {
-                    Text(hint, color = MazePaper, fontSize = 16.sp, textAlign = TextAlign.Center,
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 24.dp)
-                            .background(MazeInk.copy(alpha = 0.7f)).padding(horizontal = 12.dp, vertical = 6.dp))
-                }
             }
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.Start) {
+            // L'aide s'affiche sous le labyrinthe, pour ne jamais cacher le dragon ni une âme.
+            val hint = when {
+                ui.waitingForFirstSwipe -> "Tableau ${ui.levelNumber} · glissez pour réveiller le dragon"
+                ui.bitten -> "Une lanterne s’éteint · glissez pour repartir"
+                else -> null
+            }
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically) {
                 if (ui.phase == MazePhase.Running) {
                     TextButton(onClick = onPause) { Text("Pause", color = MazePaper) }
                 } else Spacer(Modifier.height(48.dp))
+                if (hint != null) {
+                    Text(hint, color = MazeGoldText, fontSize = 14.sp, textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f))
+                }
             }
         }
         when (ui.phase) {
-            MazePhase.Intro -> MazeIntro(onBegin)
+            MazePhase.Intro -> MazeIntro(ui, onChooseLevel, onBegin)
             MazePhase.Paused -> PauseOverlay(onResume = onResume, onRestart = onRestart, onSettings = onOpenSettings, onQuit = onQuit)
             MazePhase.Won -> MazeEnd(
-                title = "Tableau réussi",
+                title = "Tableau ${ui.levelNumber} réussi",
                 lines = listOf(
                     "Âmes recueillies : ${ui.totalSouls} × ${MazeRun.SOUL_POINTS}",
                     "Tableau : ${MazeRun.LEVEL_POINTS}",
                     "Bonus de temps : ${MazeRun.timeBonus(ui.elapsedMs)}",
-                    "Score : ${ui.score}"
+                    "Score du tableau : ${ui.score}",
+                    "Score du lac : ${ui.worldScore}"
                 ),
-                primary = "Rejouer" to onRestart,
+                primary = "Tableau ${ui.levelNumber + 1}" to onNextLevel,
+                secondary = "Rejouer ce tableau" to onRestart,
                 onQuit = onQuit
             )
             MazePhase.Lost -> MazeEnd(
                 title = "Les lanternes se sont éteintes",
-                lines = listOf("${ui.collected} âmes recueillies sur ${ui.totalSouls}"),
+                lines = listOf("${ui.collected} âmes recueillies sur ${ui.totalSouls}",
+                    "Le tableau ${ui.levelNumber} recommence avec ${MazeRun.START_LANTERNS} lanternes."),
                 primary = "Recommencer" to onRestart,
                 onQuit = onQuit
             )
-            MazePhase.Running -> Unit
+            MazePhase.Running, MazePhase.Memory -> Unit
         }
     }
 }
@@ -137,7 +150,7 @@ private fun MazeHud(ui: MazeUiState) {
     ) {
         Column {
             Text("LE LAC DES LANTERNES", color = MazeGoldText, fontSize = 11.sp, letterSpacing = 2.sp)
-            Text("Tableau 1 · essai", color = MazePaper, fontSize = 18.sp)
+            Text("Tableau ${ui.levelNumber} / ${ui.levelCount} · essai", color = MazePaper, fontSize = 18.sp)
         }
         Column(horizontalAlignment = Alignment.End) {
             Canvas(Modifier.size(66.dp, 18.dp).semantics { contentDescription = "${ui.lanterns} lanternes sur ${MazeRun.START_LANTERNS}" }) {
@@ -153,7 +166,7 @@ private fun MazeHud(ui: MazeUiState) {
 }
 
 @Composable
-private fun MazeIntro(onBegin: () -> Unit) {
+private fun MazeIntro(ui: MazeUiState, onChooseLevel: (Int) -> Unit, onBegin: () -> Unit) {
     Box(Modifier.fillMaxSize().background(MazeInk.copy(alpha = 0.92f)), contentAlignment = Alignment.Center) {
         Column(
             Modifier.widthIn(max = 420.dp).verticalScroll(rememberScrollState()).padding(32.dp),
@@ -171,8 +184,27 @@ private fun MazeIntro(onBegin: () -> Unit) {
                 color = MazePaper.copy(alpha = 0.85f), fontSize = 15.sp, lineHeight = 23.sp, textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(20.dp))
-            Text("TOUTES LES ÂMES · 3 LANTERNES · FINIR VITE RAPPORTE PLUS", color = MazeGoldText, fontSize = 11.sp,
+            Text("TROIS TABLEAUX · TOUTES LES ÂMES · 3 LANTERNES · FINIR VITE RAPPORTE PLUS", color = MazeGoldText, fontSize = 11.sp,
                 letterSpacing = 1.sp, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(20.dp))
+            // Réservé à l'essai : commencer directement au tableau voulu.
+            Text("Essai : tableau de départ", color = MazePaper.copy(alpha = 0.7f), fontSize = 13.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                repeat(ui.levelCount) { index ->
+                    FilterChip(
+                        selected = ui.levelNumber == index + 1,
+                        onClick = { onChooseLevel(index) },
+                        label = { Text("${index + 1}") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            labelColor = MazePaper,
+                            selectedContainerColor = MazeGoldText,
+                            selectedLabelColor = MazeInk
+                        )
+                    )
+                }
+            }
+            Text("Tableau ${ui.levelNumber} : ${ui.totalSouls} âmes · ${ui.cellsPerSecond.toInt()} cases par seconde",
+                color = MazePaper.copy(alpha = 0.7f), fontSize = 13.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(20.dp))
             Button(onClick = onBegin, colors = ButtonDefaults.buttonColors(containerColor = MazeGoldText, contentColor = MazeInk)) {
                 Text("Entrer dans le labyrinthe", modifier = Modifier.padding(8.dp))
@@ -182,7 +214,13 @@ private fun MazeIntro(onBegin: () -> Unit) {
 }
 
 @Composable
-private fun MazeEnd(title: String, lines: List<String>, primary: Pair<String, () -> Unit>, onQuit: () -> Unit) {
+private fun MazeEnd(
+    title: String,
+    lines: List<String>,
+    primary: Pair<String, () -> Unit>,
+    onQuit: () -> Unit,
+    secondary: Pair<String, () -> Unit>? = null
+) {
     Column(
         Modifier.fillMaxSize().background(MazeInk.copy(alpha = 0.94f)).padding(24.dp),
         verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
@@ -192,6 +230,7 @@ private fun MazeEnd(title: String, lines: List<String>, primary: Pair<String, ()
         lines.forEach { Text(it, color = MazePaper, fontSize = 16.sp, modifier = Modifier.padding(vertical = 3.dp)) }
         Spacer(Modifier.height(24.dp))
         Button(onClick = primary.second) { Text(primary.first) }
+        secondary?.let { (label, action) -> OutlinedButton(onClick = action) { Text(label, color = MazePaper) } }
         TextButton(onClick = onQuit) { Text("Retour au sanctuaire", color = MazePaper) }
     }
 }

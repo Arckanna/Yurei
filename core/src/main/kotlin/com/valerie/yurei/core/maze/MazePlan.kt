@@ -59,6 +59,17 @@ class MazePlan private constructor(
     /** Âmes impossibles à atteindre : doit être vide pour tout tableau du jeu. */
     fun unreachableSouls(): Set<Cell> = souls - reachableCells()
 
+    /**
+     * Culs-de-sac : cases libres avec une seule voisine libre (ou aucune).
+     *
+     * Doit être vide pour tout tableau du jeu : une fois entré dans un cul-de-sac,
+     * un dragon qui a un corps ne peut plus en sortir, car le seul chemin de retour
+     * passe par son cou et le demi-tour est ignoré. Il resterait bloqué pour toujours.
+     */
+    fun deadEnds(): Set<Cell> = reachableCells().filter { cell ->
+        Direction.entries.count { isOpen(cell.next(it)) } < 2
+    }.toSet()
+
     companion object {
         const val WALL = '#'
         const val EMPTY = '.'

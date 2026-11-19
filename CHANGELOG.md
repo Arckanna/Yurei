@@ -5,6 +5,18 @@
 
 ---
 
+## [Non publié] - 2026-11-19
+
+### Labyrinthe — étape 4 (début) : les trois tableaux du lac
+
+- Deux nouveaux tableaux dans `MazeCatalog` : `lac-2` (20 âmes, 5 cases/s, plus de carrefours, âmes du centre dans des passages étroits) et `lac-3` (25 âmes, 6 cases/s, damier de rochers). La liste `MazeCatalog.lake` les ordonne.
+- Nouvelle règle de conception : **aucun cul-de-sac** dans un plan (`MazePlan.deadEnds`). Un dragon qui a un corps ne peut pas ressortir d'une case à une seule issue, puisque le demi-tour est ignoré : il resterait bloqué. Le test du catalogue le vérifie pour chaque tableau.
+- Dans l'essai, les tableaux s'enchaînent : après un tableau réussi, un bouton mène au suivant (« Tableau 2 », « Tableau 3 ») ou permet de « Rejouer ce tableau », avec le score du tableau et le score cumulé du lac. Après le tableau 3, le souvenir « La lanterne offerte » s'affiche (sans bouton vers le jardin, pas encore en labyrinthe). Perdre ses 3 lanternes fait recommencer le tableau en cours ; les tableaux déjà réussis restent acquis.
+- Réservé à l'essai : l'introduction permet de choisir le tableau de départ (1, 2 ou 3).
+- Le message d'aide (« glissez pour réveiller le dragon », lanterne éteinte) passe sous le labyrinthe, pour ne plus cacher la première ligne.
+- Toujours sans sauvegarde ni record (étape 3, v8), sans son.
+- Validation : 2 nouveaux tests JVM (69 dans `:core`, tous réussis), `assembleDebug` et `lintDebug` réussis ; introduction et tableaux 2 et 3 vérifiés sur émulateur (API 36).
+
 ## [Non publié] - 2026-11-18
 
 ### Tests — sauvegarde

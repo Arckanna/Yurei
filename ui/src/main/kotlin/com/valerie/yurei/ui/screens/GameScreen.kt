@@ -169,7 +169,14 @@ private fun JourneyIntro(level: Int, onBegin: () -> Unit) {
 }
 
 @Composable
-fun MemoryScreen(onHome: () -> Unit, onReplay: () -> Unit, level: Int = 1, onNext: () -> Unit = {}) {
+fun MemoryScreen(
+    onHome: () -> Unit,
+    onReplay: () -> Unit,
+    level: Int = 1,
+    onNext: () -> Unit = {},
+    /** Faux quand le monde suivant n'existe pas encore (essai du labyrinthe). */
+    showNext: Boolean = true
+) {
     Column(Modifier.fillMaxSize().background(Ink).systemBarsPadding().verticalScroll(rememberScrollState())
         .padding(horizontal = 28.dp, vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("SOUVENIR RETROUVÉ", color = Gold, fontSize = 12.sp, letterSpacing = 3.sp)
@@ -186,8 +193,8 @@ fun MemoryScreen(onHome: () -> Unit, onReplay: () -> Unit, level: Int = 1, onNex
         Button(onClick = onHome, colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Ink)) {
             Text("Retour au sanctuaire")
         }
-        if (level == 1) Button(onClick = onNext, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE5B0C9), contentColor = Ink)) { Text("Vers le jardin des sakuras") }
-        if (level == 2) Button(onClick = onNext, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBCD5EE), contentColor = Ink)) { Text("Vers le sanctuaire des marées") }
+        if (showNext && level == 1) Button(onClick = onNext, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE5B0C9), contentColor = Ink)) { Text("Vers le jardin des sakuras") }
+        if (showNext && level == 2) Button(onClick = onNext, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBCD5EE), contentColor = Ink)) { Text("Vers le sanctuaire des marées") }
         TextButton(onClick = onReplay) { Text("Rejouer ce monde", color = Paper) }
     }
 }

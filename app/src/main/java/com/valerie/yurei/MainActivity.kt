@@ -144,7 +144,10 @@ fun YureiApp() {
                         mazeViewModel.quit()
                         rootNav.toHome()
                     },
-                    onOpenSettings = { rootNav.toSettings() }
+                    onOpenSettings = { rootNav.toSettings() },
+                    onNextLevel = mazeViewModel::nextLevel,
+                    onChooseLevel = mazeViewModel::chooseLevel,
+                    onReplayWorld = mazeViewModel::replayWorld
                 )
             }
 

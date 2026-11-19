@@ -30,6 +30,7 @@ Les valeurs chiffrées sont des **points de départ** : elles seront ajustées a
 ### 3.1 Le labyrinthe
 - La grille occupe le terrain logique de 1080 × 1920 unités. Proposition : cases de 120 unités, soit 9 colonnes × 16 lignes, ce qui laisse de la place pour l'affichage en haut de l'écran.
 - Un mur occupe une case entière (choix fait à l'étape 1 : un plan s'écrit alors comme un simple dessin en texte, facile à relire et à corriger). Les labyrinthes sont **dessinés à la main** (pas de génération aléatoire) dans `core/.../maze/MazeCatalog.kt`, avec `#` pour un mur, `.` pour un couloir, `o` pour une âme et `D` pour le départ. On peut les relire, les tester et en ajouter sans modifier le moteur. Le bord de la grille compte comme un mur.
+- Un plan n'a **aucun cul-de-sac** (case libre à une seule issue) : le demi-tour étant ignoré, un dragon qui y entrerait avec un corps ne pourrait plus en ressortir. Vérifié par un test pour chaque tableau (ajouté à l'étape 4).
 - Le labyrinthe est fermé, sans téléportation d'un bord à l'autre.
 - Chaque tableau a une case de départ et une direction de départ.
 
