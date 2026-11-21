@@ -5,6 +5,23 @@
 
 ---
 
+## [0.4.0] - 2026-11-19 — première version de test (Google Play)
+
+Regroupe toutes les sections « Non publié » ci-dessous. `versionCode` 2, `versionName` 0.4.0.
+
+Notes de version pour les testeurs (Play Console, fr-FR, 500 caractères au plus) :
+
+```
+<fr-FR>
+Première version de test de Yūrei.
+- Le défi des trois mondes : guidez l'esprit du dragon et recueillez 30 âmes en 3 minutes.
+- Nouveau : l'essai du lac en labyrinthe (bouton « Essai » sur l'accueil), en 3 tableaux. Glissez le doigt pour tourner.
+Dites-nous ce que vous en pensez : difficulté, sensibilité des glissements, bugs rencontrés.
+</fr-FR>
+```
+
+- Validation : tests JVM réussis ; `bundleRelease` et `assembleRelease` (R8 activé, lint de release) réussis sans signature. Permissions de l'APK : `ACCESS_NETWORK_STATE` seulement (ajoutée par ExoPlayer), pas d'accès Internet. La build release signée n'a pas encore été essayée sur appareil.
+
 ## [Non publié] - 2026-11-19
 
 ### Labyrinthe — étape 4 (début) : les trois tableaux du lac
